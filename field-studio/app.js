@@ -917,7 +917,7 @@
     fromSec.concat(fromBody).forEach((t) => {
       if (!seen.has(t)) { seen.add(t); out.push(t); }
     });
-    return out.slice(0, 12);
+    return out.slice(0, 10);   // 잉크원 지침: 해시태그 10개 초과 금지
   }
 
   function finishResult(sec, r) {
