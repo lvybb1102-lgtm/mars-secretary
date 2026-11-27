@@ -156,10 +156,73 @@ input,textarea,select{font-family:inherit;color:inherit}
 .room{
   flex:0 0 auto;display:flex;align-items:center;gap:5px;
   min-height:36px;padding:7px 13px;border-radius:999px;
-  border:1px solid var(--line-2);background:#FFFDF9;
+  border:1px solid var(--line-2);background:linear-gradient(180deg,#FFFDF9,#FFF8EC);
   color:#6B5644;font-size:12px;font-weight:700;letter-spacing:-.3px;transition:.16s;
+  box-shadow:0 2px 6px rgba(150,110,64,.09),0 1px 0 #fff inset;
 }
-.room.active{background:#fff;border-color:#EBC5B4;color:#4A3123;box-shadow:0 3px 10px rgba(196,146,118,.22),0 0 0 2px rgba(251,227,213,.45)}
+.room.active{background:linear-gradient(180deg,#FFFDFA,#FDF3E5);border-color:#E3B79C;color:#4A3123;box-shadow:0 4px 12px rgba(196,146,118,.28),0 0 0 2px rgba(251,227,213,.55),0 1px 0 #fff inset}
+
+/* ───────── 🗺️ 오피스 맵 (클레이 3D) ───────── */
+.omap{
+  flex:0 0 auto;margin:9px 10px 0;padding:9px 10px 8px;
+  background:linear-gradient(180deg,#FFFDF9 0%,#FCF5E9 100%);
+  border:1px solid #EDDFC9;border-radius:20px;
+  box-shadow:0 10px 26px rgba(146,110,66,.12),0 1px 0 #fff inset;
+}
+.omap-head{display:flex;align-items:flex-start;gap:8px;min-width:0}
+.omap-ico{
+  width:27px;height:27px;flex:0 0 auto;display:grid;place-items:center;font-size:14px;
+  border-radius:9px;background:linear-gradient(160deg,#FFF4DA 0%,#F4DFB3 100%);
+  border:1px solid #EAD2A4;box-shadow:0 2px 5px rgba(190,150,90,.22),0 1px 0 #fff inset;
+}
+.omap-tt{flex:1 1 auto;min-width:0}
+.omap-tt b{display:block;font-size:12.5px;font-weight:900;color:#4A3123;letter-spacing:-.5px;line-height:1.28}
+.omap-sub{display:block;margin-top:1px;font-size:10px;font-weight:600;color:#96806A;letter-spacing:-.25px;line-height:1.45;word-break:keep-all}
+.omap-tg{
+  flex:0 0 auto;display:flex;align-items:center;gap:4px;min-height:29px;padding:5px 10px;
+  border:1px solid #E7D6BE;border-radius:999px;background:#FFFDF8;color:#7A5B3E;
+  font-size:10.5px;font-weight:800;letter-spacing:-.2px;white-space:nowrap;
+  box-shadow:0 2px 6px rgba(150,110,64,.10),0 1px 0 #fff inset;transition:transform .12s,background .15s;
+}
+.omap-tg:active{transform:scale(.96);background:#FFF6E4}
+.omap-tg i{font-style:normal;font-size:9px;line-height:1;transition:transform .24s}
+.omap.closed .omap-tg i{transform:rotate(180deg)}
+.omap-plate{
+  position:relative;margin-top:8px;border-radius:16px;overflow:hidden;
+  aspect-ratio:5 / 4;max-height:46vh;background:#F7ECDA;
+  border:1px solid #E8D6BC;
+  box-shadow:0 6px 16px rgba(150,110,64,.14),0 1px 0 #fff inset;
+}
+.omap.closed .omap-plate,.omap.closed .omap-foot{display:none}
+.omap-img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 46%}
+.omap-pins{position:absolute;inset:0;pointer-events:none}
+.omap-pin{
+  position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);pointer-events:auto;
+  display:flex;align-items:center;gap:5px;padding:6px 11px;border-radius:999px;
+  border:1px solid rgba(255,255,255,.9);background:rgba(255,253,247,.94);
+  color:#5B4231;font-size:11px;font-weight:800;letter-spacing:-.35px;white-space:nowrap;
+  box-shadow:0 4px 12px rgba(110,78,42,.22),0 1px 0 #fff inset;backdrop-filter:blur(3px);
+  transition:transform .16s,background .16s,color .16s,box-shadow .16s;
+}
+.omap-pin .pd{width:8px;height:8px;border-radius:50%;flex:0 0 auto;background:var(--pc,#E8A88F);box-shadow:0 0 0 2px rgba(255,255,255,.65)}
+.omap-pin:active{transform:translate(-50%,-50%) scale(.95)}
+.omap-pin.on{
+  background:linear-gradient(180deg,#71492A 0%,#472C19 100%);color:#FFF7EA;border-color:#C9A46E;
+  box-shadow:0 0 0 2px rgba(232,190,110,.72),0 8px 18px rgba(71,44,25,.34);
+}
+.omap-pin.on .pd{box-shadow:0 0 0 0 rgba(255,255,255,.8);animation:pinPulse 2.1s infinite}
+@keyframes pinPulse{
+  0%{box-shadow:0 0 0 0 rgba(255,255,255,.75)}
+  70%{box-shadow:0 0 0 6px rgba(255,255,255,0)}
+  100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}
+}
+.omap-foot{display:flex;align-items:center;justify-content:space-between;gap:5px 10px;flex-wrap:wrap;padding:7px 2px 1px}
+.omap-guide{font-size:9.5px;font-weight:700;color:#9A7E62;letter-spacing:-.25px;line-height:1.4}
+.omap-legend{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.omap-lg{display:flex;align-items:center;gap:3px;font-size:9.5px;font-weight:800;color:#A08A76;letter-spacing:-.25px;transition:color .15s}
+.omap-lg i{display:block;width:6px;height:6px;border-radius:50%;background:var(--pc);opacity:.55;transition:opacity .15s,transform .15s}
+.omap-lg.on{color:#5E4633}
+.omap-lg.on i{opacity:1;transform:scale(1.25)}
 
 .roomline{
   display:flex;align-items:center;justify-content:space-between;gap:8px;
@@ -202,7 +265,7 @@ input,textarea,select{font-family:inherit;color:inherit}
 .m-ai .a-avatar{
   width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:13.5px;
   background:var(--tint,#F4E9D8);border:1px solid rgba(120,90,50,.10);
-  box-shadow:0 1px 0 #fff inset;
+  box-shadow:0 1px 0 #fff inset,0 3px 8px rgba(120,90,50,.12);
 }
 .m-ai .a-body{min-width:0}
 .m-ai .a-head{display:flex;align-items:baseline;gap:6px;margin:1px 0 4px;flex-wrap:wrap}
@@ -321,7 +384,7 @@ input,textarea,select{font-family:inherit;color:inherit}
 .staff::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,var(--tc,#C9A277),transparent 85%)}
 .staff-top{display:flex;align-items:center;gap:10px}
 .staff-avatar{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;font-size:20px;
-  background:var(--tint,#F4E9D8);border:1px solid rgba(120,90,50,.10)}
+  background:var(--tint,#F4E9D8);border:1px solid rgba(120,90,50,.10);box-shadow:0 1px 0 #fff inset,0 4px 10px rgba(120,90,50,.10)}
 .staff-id{flex:1;min-width:0}
 .staff-name{font-size:13.5px;font-weight:800;color:#3A2A1B;letter-spacing:-.3px}
 .staff-role{font-size:10.5px;color:#9C8674;font-weight:600;margin-top:1px}
@@ -531,6 +594,7 @@ input,textarea,select{font-family:inherit;color:inherit}
   .app{width:100%;height:100dvh;max-height:100dvh;border:0;border-radius:0;box-shadow:none}
   #input{font-size:16px;min-height:46px}
   .m-user .bubble,.m-ai .bubble{font-size:14px}
+  .omap-plate{max-height:42vh}
   .memo-add textarea,.memo-add-row input,.searchbar input,.newtask input,.field input,.field select,.field textarea{font-size:16px}
 }
 @media (max-width:400px){
@@ -549,6 +613,15 @@ input,textarea,select{font-family:inherit;color:inherit}
   .chips{gap:3px}
   .chip{font-size:10.5px;padding:6px 7px;gap:2px}
   .toast-wrap{bottom:196px}
+  .omap{margin:8px 8px 0;padding:8px 9px 7px;border-radius:17px}
+  .omap-ico{width:25px;height:25px;font-size:13px;border-radius:8px}
+  .omap-tt b{font-size:12px}
+  .omap-sub{font-size:9.5px}
+  .omap-tg{min-height:27px;padding:4px 8px;font-size:10px}
+  .omap-pin{font-size:10.5px;padding:5px 9px;gap:4px;letter-spacing:-.4px}
+  .omap-pin .pd{width:7px;height:7px}
+  .omap-guide{font-size:9px}
+  .omap-lg{font-size:9px;gap:2px}
 }
 @media (prefers-reduced-motion:reduce){
   *{animation-duration:.001ms !important;transition-duration:.001ms !important}
@@ -585,6 +658,26 @@ input,textarea,select{font-family:inherit;color:inherit}
 
     <!-- ───────── 회의실 ───────── -->
     <section class="view active" id="view-chat">
+      <section class="omap" id="officeMap" aria-label="오피스 맵">
+        <div class="omap-head">
+          <span class="omap-ico" aria-hidden="true">🗺️</span>
+          <div class="omap-tt">
+            <b>오피스 맵</b>
+            <span class="omap-sub">대회의실 · 지휘실 · 라운지, 다섯 명의 비서가 움직입니다.</span>
+          </div>
+          <button class="omap-tg" id="btnMapToggle" aria-expanded="true" aria-controls="omapPlate" aria-label="오피스 맵 접기">
+            <span id="mapToggleTxt">접기</span><i aria-hidden="true">▴</i>
+          </button>
+        </div>
+        <div class="omap-plate" id="omapPlate">
+          <img class="omap-img" id="omapImg" src="./assets/office-map.jpg" alt="마르스 비서실 클레이 3D 오피스 맵" width="1200" height="960" decoding="async">
+          <div class="omap-pins" id="omapPins"></div>
+        </div>
+        <div class="omap-foot">
+          <span class="omap-guide">클레이 3D 오피스 · 공간을 눌러 모드를 바꿔 보세요</span>
+          <span class="omap-legend" id="omapLegend"></span>
+        </div>
+      </section>
       <div class="rooms" id="rooms"></div>
       <div class="roomline">
         <span class="roomline-l" id="roomLine">🎯 지휘실 · ON 5명</span>
@@ -885,7 +978,7 @@ input,textarea,select{font-family:inherit;color:inherit}
         imageAspect: '1:1',
         openaiModel: 'gpt-6-luna'               // 🧠 지피티(OpenAI) 기본 모델
       },
-      ui: { senderId: 'owner', tab: 'chat', taskFilter: 'all' },
+      ui: { senderId: 'owner', tab: 'chat', taskFilter: 'all', mapOpen: true },
       meta: { createdAt: t, updatedAt: t, welcomed: false }
     };
   }
@@ -943,6 +1036,7 @@ input,textarea,select{font-family:inherit;color:inherit}
     if (!out.usage || typeof out.usage !== 'object' || Array.isArray(out.usage)) out.usage = {};
     if (!out.rooms.some((r) => r.id === out.activeRoom)) out.activeRoom = out.rooms[0].id;
     if (!['chat', 'tasks', 'staff', 'memo'].includes(out.ui.tab)) out.ui.tab = 'chat';
+    if (typeof out.ui.mapOpen !== 'boolean') out.ui.mapOpen = true;
     return out;
   }
 
@@ -1190,6 +1284,63 @@ input,textarea,select{font-family:inherit;color:inherit}
   function assistantById(id) { return state.assistants.find((a) => a.id === id); }
   function activeRoom() { return state.rooms.find((r) => r.id === state.activeRoom) || state.rooms[0]; }
 
+  /* ───────── 🗺️ 오피스 맵 ───────── */
+  /* 공간별 오버레이 위치(%)와 색 — 클레이 3D 오피스 이미지의 실제 배치에 맞춤 */
+  const MAP_SPOTS = [
+    { id: 'main', x: 30, y: 45, color: '#E8A88F' },     // 유리 파티션 대회의실 (좌)
+    { id: 'cmd', x: 71, y: 47, color: '#8FB4D9' },      // 다중 모니터 지휘실 (우)
+    { id: 'lounge', x: 18, y: 79, color: '#9CC6A5' }    // 베이지 소파 라운지 (앞좌)
+  ];
+
+  function setRoom(id) {
+    if (!id || !state.rooms.some((r) => r.id === id)) return false;
+    state.activeRoom = id;
+    save();
+    renderRooms();
+    renderChat(true);
+    return true;
+  }
+
+  function renderMap() {
+    const card = $('#officeMap');
+    if (!card) return;
+    const open = state.ui.mapOpen !== false;
+    card.classList.toggle('closed', !open);
+    const tg = $('#btnMapToggle');
+    if (tg) {
+      tg.setAttribute('aria-expanded', open ? 'true' : 'false');
+      tg.setAttribute('aria-label', open ? '오피스 맵 접기' : '오피스 맵 펼치기');
+      const t = $('#mapToggleTxt');
+      if (t) t.textContent = open ? '접기' : '펼치기';
+    }
+    const spots = MAP_SPOTS.filter((s) => state.rooms.some((r) => r.id === s.id));
+    const pins = $('#omapPins');
+    if (pins) {
+      pins.innerHTML = spots.map((s) => {
+        const r = state.rooms.find((x) => x.id === s.id) || {};
+        const on = s.id === state.activeRoom;
+        return '<button class="omap-pin' + (on ? ' on' : '') + '" data-map-room="' + esc(s.id) + '"' +
+          ' style="--x:' + s.x + '%;--y:' + s.y + '%;--pc:' + s.color + '"' +
+          ' aria-pressed="' + (on ? 'true' : 'false') + '">' +
+          '<i class="pd"></i>' + esc(r.name || '') + '</button>';
+      }).join('');
+    }
+    const lg = $('#omapLegend');
+    if (lg) {
+      lg.innerHTML = spots.map((s) => {
+        const r = state.rooms.find((x) => x.id === s.id) || {};
+        return '<span class="omap-lg' + (s.id === state.activeRoom ? ' on' : '') + '" style="--pc:' + s.color + '">' +
+          '<i></i>' + esc(r.name || '') + '</span>';
+      }).join('');
+    }
+  }
+
+  function toggleMap() {
+    state.ui.mapOpen = state.ui.mapOpen === false;
+    save();
+    renderMap();
+  }
+
   function renderHeader() {
     $('#officeName').textContent = state.profile.officeName || '마르스 비서실';
     $('#ownerLine').textContent = (state.profile.ownerName || '마르스') + ' 님 전용';
@@ -1216,6 +1367,7 @@ input,textarea,select{font-family:inherit;color:inherit}
     ).join('');
     const room = activeRoom();
     $('#roomLine').textContent = (room.emoji || '') + ' ' + room.name + ' · ON ' + (state.assistants.length + 1) + '명';
+    renderMap();
   }
 
   /* 첨부 썸네일 · 파일 이름 줄 */
@@ -3633,8 +3785,16 @@ input,textarea,select{font-family:inherit;color:inherit}
       if (imgRetry) { retryImage(imgRetry.dataset.imgRetry); return; }
       const roomBtn = ev.target.closest('.room');
       if (roomBtn) {
-        state.activeRoom = roomBtn.dataset.room;
-        save(); renderRooms(); renderChat(true);
+        setRoom(roomBtn.dataset.room);
+        return;
+      }
+      const mapBtn = ev.target.closest('[data-map-room]');
+      if (mapBtn) {
+        setRoom(mapBtn.dataset.mapRoom);
+        return;
+      }
+      if (ev.target.closest('#btnMapToggle')) {
+        toggleMap();
         return;
       }
       const sBtn = ev.target.closest('[data-sender]');

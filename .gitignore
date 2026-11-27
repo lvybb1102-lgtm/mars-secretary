@@ -6,3 +6,5 @@ verify_live_v4.py
 verify_v5_openai_local.py
 verify_live_v5.py
 verify_v5_compat.py
+build_mobile.py
+verify_v6_map.py

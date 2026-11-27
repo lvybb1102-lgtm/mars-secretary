@@ -1,6 +1,7 @@
-/* 마르스 비서실 — 오프라인 백업용 서비스 워커 (네트워크 우선, 실패 시 캐시) */
-const CACHE = 'mars-secretary-v5';
-const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
+/* 마르스 비서실 — 오프라인 백업용 서비스 워커 (네트워크 우선, 실패 시 캐시)
+   v6: 🗺️ 오피스 맵 자산(assets/office-map.jpg) 프리캐시 추가 */
+const CACHE = 'mars-secretary-v6';
+const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './assets/office-map.jpg'];
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();
