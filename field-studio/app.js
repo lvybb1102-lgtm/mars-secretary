@@ -38,10 +38,73 @@
 
   const TYPES = ['설치', 'AS/수리', '정기점검', '정보글', '상담', '견적', '철수'];
 
+  /* ────────────────── 쓰기 모드 (설치·AS / 정보성 지정 / 정보성 랜덤) ────────────────── */
+  const MODES = {
+    field: { label: '설치·AS 후기', btn: '이 현장으로 만들기', hint: '현장 사진과 한 줄 메모로 설치·AS 후기 원고를 만듭니다.' },
+    topic: { label: '정보성 지정 주제', btn: '이 주제로 만들기', hint: '주제를 하나 정하면 그 주제로 정보성 글을 씁니다. 사진이 없어도 됩니다.' },
+    random: { label: '정보성 랜덤 주제', btn: '🎲 랜덤 주제로 만들기', hint: '주제를 비우면 AI가 최근 글과 겹치지 않는 새 주제를 골라 씁니다. [다른 주제 뽑기]로 주제만 먼저 정해도 됩니다.' }
+  };
+
+  /* 지정 주제 — 누르면 바로 채우는 추천 칩 */
+  const CHIPS = {
+    ink1: [
+      '복합기 종이 걸림, 현장에서 바로 빼는 순서',
+      '복합기 스캔이 흐릴 때 확인할 3가지',
+      '프린터가 오프라인으로 뜰 때 점검 순서',
+      '토너 교체 후에도 경고가 남는 이유',
+      '사무실 복합기 정기점검 체크리스트'
+    ],
+    swo621: [
+      '장마철 사무실 습기 관리법',
+      '겨울철 사무실 전기요금 줄이는 습관',
+      '사무실 멀티탭 안전하게 쓰는 법',
+      '컴퓨터가 갑자기 느려졌을 때 점검',
+      '중고 가전 살 때 확인해야 할 것'
+    ]
+  };
+
+  /* 랜덤 주제 풀 — '다른 주제 뽑기'(가격 없는 주제만) */
+  const TOPICS = {
+    ink1: [
+      '복합기 종이 걸림, 급지롤러부터 확인하는 이유',
+      '복합기 스캔이 흐릴 때 유리판과 롤러 점검법',
+      '프린터가 자꾸 오프라인으로 뜰 때 네트워크 점검 순서',
+      '토너 교체 후에도 경고가 남는 이유',
+      '복합기 양면 인쇄가 한 면만 나올 때 설정 확인법',
+      '장마철 복합기 용지 눌어붙음 예방법',
+      '복합기 팩스가 안 나갈 때 확인하는 5가지',
+      '사무실 와이파이 프린터 연결이 끊길 때 고정 IP 설정',
+      '복합기 정기점검 때 실제로 확인해야 하는 것',
+      '사무실 이사 후 복합기 재설치 체크리스트',
+      '복합기 스캔 파일이 PDF로 저장되지 않을 때',
+      '프린터 소음이 커졌을 때 의심할 부품',
+      '복합기 화면에 뜨는 오류코드를 읽는 법',
+      '복사기 전원이 안 켜질 때 확인 순서',
+      '복합기 보안, 스캔 이력과 비밀번호 관리'
+    ],
+    swo621: [
+      '장마철 사무실 습기와 곰팡이 관리법',
+      '겨울철 사무실 전기요금을 줄이는 습관',
+      '사무실 멀티탭을 안전하게 쓰는 법',
+      '컴퓨터가 갑자기 느려졌을 때 3분 점검',
+      '중고 가전 살 때 확인해야 할 것',
+      '사무실 이사 전에 정리해야 하는 것들',
+      '인쇄한 서류를 습기 없이 보관하는 방법',
+      '재택근무 때 집에서 인쇄를 아끼는 법',
+      '사무실 정수기·냉장고 위생 체크',
+      '장거리 운전 전 차량 점검 체크리스트',
+      '사무실 조명이 눈에 부담될 때 바꾸는 법',
+      '겨울철 실내 적정 습도 맞추는 법'
+    ]
+  };
+
   /* ───────────────────────── 상태 ───────────────────────── */
   const S = {
     view: 'home',
     brand: 'ink1',
+    mode: 'field',
+    topic: '',
+    pick: '',
     type: 'AS/수리',
     photos: [],
     memo: '',
@@ -103,6 +166,109 @@
     $('#whoLine').textContent = b.name + ' · ' + b.blog;
     $('#writePresetLabel').textContent = '· ' + b.name;
     $('#presetLine').textContent = b.line;
+    $('#presetLine2').textContent = b.line;
+    if (S.mode === 'topic') paintTopicChips();
+    if (S.mode === 'random') paintRecentTopics();
+  }
+
+  /* ───────────────────────── 쓰기 모드 전환 ───────────────────────── */
+  function setMode(m) {
+    S.mode = MODES[m] ? m : 'field';
+    const field = S.mode === 'field';
+    $$('#modeTabs .modecard').forEach((b) => b.classList.toggle('on', b.dataset.m === S.mode));
+    $('#modeHint').textContent = MODES[S.mode].hint;
+    $('#topicCard').classList.toggle('hidden', S.mode !== 'topic');
+    $('#randomCard').classList.toggle('hidden', S.mode !== 'random');
+    $('#typeCard').classList.toggle('hidden', !field);
+    $('#infoCard').classList.toggle('hidden', field);
+    $('#memoCard').classList.toggle('hidden', S.mode === 'random');
+
+    $('#photoTitle').textContent = field ? '1. 사진' : '2. 사진 · 선택';
+    $('#memoTitle').textContent = field ? '2. 한 줄 메모' : '3. 메모 · 선택';
+    $('#memoSub').textContent = field ? '기종·증상·조치' : '넣고 싶은 내용';
+    $('#memo').placeholder = field
+      ? '예) 성서공단 사무실, 복합기 종이 걸림 수리. 급지롤러 교체하고 양면 20매 시험 출력까지.'
+      : '예) 자주 묻는 질문에 "스캔이 흐려요" 사례를 꼭 넣어 주세요. (글에 꼭 넣을 내용만)';
+    $('#micHint').textContent = field ? '사진에 없는 사실을 채워 넣습니다' : '글에 꼭 넣을 내용만 적어 주세요';
+    $('#makeBtn').textContent = MODES[S.mode].btn;
+    $('#infoNote').innerHTML = S.mode === 'topic'
+      ? '정보성 글도 <b>제목 3안 · 본문 1,600~1,900자(결론→핵심→방법→체크리스트→FAQ→CTA) · 스레드 · 15초 쇼츠 · 인스타 · 태그 8~10개</b>로 나옴니다. 가격·임대료 숫자는 넣지 않습니다.'
+      : 'AI가 주제를 먼저 고르고, 최근 글 제목은 <b>중복 회피</b>를 위해 함께 넘깁니다. 형식은 정보성 글과 같습니다.';
+
+    if (S.mode === 'topic') paintTopicChips();
+    if (S.mode === 'random') { paintPick(); paintRecentTopics(); }
+    paintThumbs();
+  }
+
+  function normTopic(s) {
+    return String(s || '').toLowerCase().replace(/[\s·,.\-—~'"“”()\[\]]/g, '');
+  }
+
+  /* 지정 주제 추천 칩 */
+  function paintTopicChips() {
+    const box = $('#topicChips');
+    box.innerHTML = '';
+    (CHIPS[S.brand] || CHIPS.ink1).forEach((t) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chip' + (S.topic.trim() === t ? ' on' : '');
+      b.textContent = t;
+      b.addEventListener('click', () => {
+        S.topic = t;
+        $('#topicInput').value = t;
+        $$('#topicChips .chip').forEach((x) => x.classList.toggle('on', x.textContent === t));
+      });
+      box.appendChild(b);
+    });
+  }
+
+  /* 랜덤 주제: 뽑기·최근 주제 */
+  function paintPick() {
+    const box = $('#pickedBox');
+    if (S.pick) {
+      box.className = 'picked';
+      box.textContent = '🎲 ' + S.pick;
+    } else {
+      box.className = 'picked off';
+      box.textContent = '아직 뽑지 않았습니다 · AI가 최근 글과 겹치지 않는 새 주제를 고릅니다';
+    }
+  }
+
+  function rollTopic() {
+    const pool = TOPICS[S.brand] || TOPICS.ink1;
+    const seen = new Set();
+    S.history.slice(0, 12).forEach((h) => {
+      if (h.topic) seen.add(normTopic(h.topic));
+      if (h.titles && h.titles[0]) seen.add(normTopic(h.titles[0]));
+    });
+    seen.add(normTopic(S.pick));
+    let cand = pool.filter((t) => !seen.has(normTopic(t)));
+    if (!cand.length) cand = pool.slice();
+    S.pick = cand[Math.floor(Math.random() * cand.length)];
+    paintPick();
+    return S.pick;
+  }
+
+  function paintRecentTopics() {
+    const box = $('#recentTopics');
+    box.innerHTML = '';
+    const items = [];
+    S.history.forEach((h) => {
+      const t = String(h.topic || (h.titles && h.titles[0]) || '').trim();
+      if (t && items.indexOf(t) < 0) items.push(t);
+    });
+    if (!items.length) {
+      box.innerHTML = '<span class="tiny">아직 쓴 글이 없습니다 · 이번이 첫 랜덤 주제입니다.</span>';
+      return;
+    }
+    items.slice(0, 8).forEach((t) => {
+      const s = document.createElement('span');
+      s.className = 'chip tag';
+      s.style.fontSize = '11px';
+      s.title = t;
+      s.textContent = t.length > 24 ? t.slice(0, 24) + '…' : t;
+      box.appendChild(s);
+    });
   }
 
   /* ───────────────────────── 사진: EXIF·리사이즈 ───────────────────────── */
@@ -251,9 +417,12 @@
     if (S.photos.length < 10) box.appendChild(add);
     $('#photoMeta').textContent = S.photos.length + '/10장';
     const dated = S.photos.filter((p) => p.dateKey).length;
+    const info = S.mode !== 'field';
     $('#photoHint').textContent = S.photos.length
-      ? '사진을 눌러 얼굴·번호 가리기 · ' + (dated ? dated + '장 촬영 시각 정렬 · ' : '') + 'AI용 800px 별도'
-      : '촬영 시각이 있으면 순서대로 정렬합니다 · 사진을 눌러 모자이크';
+      ? (info ? '사진 ' + S.photos.length + '장 · 눌러서 가리기 · 글에는 보조 자료로만 반영'
+              : '사진을 눌러 얼굴·번호 가리기 · ' + (dated ? dated + '장 촬영 시각 정렬 · ' : '') + 'AI용 800px 별도')
+      : (info ? '사진 없이도 만들 수 있습니다 · 넣으면 보조 자료로 반영'
+              : '촬영 시각이 있으면 순서대로 정렬합니다 · 사진을 눌러 모자이크');
   }
 
   /* ───────────────────────── 모자이크 편집기 ───────────────────────── */
@@ -456,22 +625,98 @@
 [블로그] 제목 3안은 검색 키워드 중심 30자 안팎(꼬리표 없음). 본문 1,600~1,900자, 소제목 4~6개, 결론→원인→확인 방법→사례→FAQ. HTML은 <h2>,<p>,<ul>,<li>,<b> 만. 해시태그는 태그 줄로 8~10개. 가격 숫자 금지.
 [스레드] 250~350자 요약. [15초 쇼츠] 훅/핵심 3단계/엔딩, 자막과 음성 분리. [인스타] 첫 줄 '수원' 시작, 위치 태그 없음. [유튜브] 제목·설명.`;
 
-  function systemFor(brand) {
-    if (brand === 'swo621') return SYS_SWO;
-    if (brand === 'blogger') return SYS_BLOG;
-    return SYS_INK;
+  const INFO_INK = `
+
+[정보성 글 모드 — 위 지침과 겹치면 이 절을 먼저 따른다]
+- 이 글은 현장 후기가 아닌 '정보성 글'이다. 주어진 주제(또는 네가 고른 주제) 하나로, 읽는 사람이 바로 써먹을 정보를 쓴다.
+- 사진이 없을 수 있다. 사진이 없으면 사진·현장 목격을 언급하지 않는다. 사진이 있으면 보이는 범위에서 보조로만 쓴다.
+- 없는 상담 사례·고객 이야기·출력 매수·소요 시간·오류코드·기종별 고장 이력을 지어내지 않는다. 일반적인 원리·점검 순서·설정 방법·체크리스트는 구체적으로 쓴다.
+- 본문 순서를 정보성에 맞춤: 결론(3줄) → 핵심·원인 → 방법·조치(단계별) → 체크리스트(불릿 4~6개) → 자주 묻는 질문 2~3개 → CTA.
+- 분량 1,600~1,900자, 소제목 4~6개, 해시태그 8~10개, CTA 고정값(1544-4065 · https://ink1.kr/)은 위 지침 그대로 지킨다.
+- 제목 3안도 위 규칙대로 30자 안팎, 끝에 ' /아싸렌탈수원지사', 앞 15자에 지역·기종·증상 중 둘 이상.
+- 가격·월 임대료·견적 숫자는 어느 산출물에도 쓰지 않는다.`;
+
+  const INFO_SWO = `
+
+[정보성 글 모드 — 위 지침과 겹치면 이 절을 먼저 따른다]
+- 사진 없이 주제만 주어진다. 주어진 주제(또는 네가 고른 주제) 하나로 일반·생활 정보 글을 쓴다.
+- 상호·전화번호·주소·CTA를 넣지 않는다. 브랜드 언급도 하지 않는다.
+- 없는 통계·연구·수치·개인 사례를 지어내지 않는다. 널리 알려진 원리와 실제로 해볼 수 있는 방법·점검 순서로 쓴다.
+- 본문 순서: 결론(3줄) → 왜 그런가 → 방법·조치(단계별) → 체크리스트 → 자주 묻는 질문 2~3개.
+- 분량 1,600~1,900자, 소제목 4~6개, 해시태그 8~10개. 가격 숫자는 쓰지 않는다.
+- 제목 3안은 30자 안팎, 꼬리표 없이. 인스타 첫 줄은 '수원'으로 시작하고 위치 태그는 넣지 않는다.`;
+
+  const INFO_BLOG = `
+
+[정보성 글 모드 — 위 지침과 겹치면 이 절을 먼저 따른다]
+- 주어진 주제(또는 네가 고른 주제)로 담백한 정보 글을 쓴다. 현장 후기 형식은 쓰지 않는다.
+- 사진이 없으면 사진·현장 목격을 언급하지 않는다. 사진이 있으면 보조로만 쓴다.
+- 없는 사례·수치·기종별 이력을 지어내지 않는다. 검색하는 사람이 바로 쓸 수 있는 방법·점검 순서로 쓴다.
+- 본문 순서: 결론(3줄) → 핵심·원인 → 방법·조치(단계별) → 체크리스트 → 자주 묻는 질문 2~3개. 분량 1,600~1,900자, 소제목 4~6개, 태그 8~10개.
+- 제목 3안은 검색 키워드 중심 30자 안팎, 꼬리표 없음. 가격 숫자는 쓰지 않는다.`;
+
+  function systemFor(brand, mode) {
+    const info = mode && mode !== 'field';
+    if (brand === 'swo621') return info ? SYS_SWO + INFO_SWO : SYS_SWO;
+    if (brand === 'blogger') return info ? SYS_BLOG + INFO_BLOG : SYS_BLOG;
+    return info ? SYS_INK + INFO_INK : SYS_INK;
+  }
+
+  function recentForPrompt(n) {
+    const out = [];
+    S.history.slice(0, n).forEach((h) => {
+      const t = String((h.titles && h.titles[0]) || '').trim();
+      if (t) out.push(t);
+      const tp = String(h.topic || '').trim();
+      if (tp && tp !== t) out.push('주제: ' + tp);
+    });
+    return out.slice(0, 20);
   }
 
   function userPrompt() {
     const b = BRANDS[S.brand];
     const lines = [];
-    lines.push('작업 종류: ' + S.type);
-    if (S.memo.trim()) lines.push('현장 메모: ' + S.memo.trim());
-    lines.push('사진 ' + S.photos.length + '장(촬영 순서대로). 사진에 보이는 것을 근거로 써라.');
-    lines.push('브랜드: ' + b.label);
+    const info = S.mode !== 'field';
+    if (!info) {
+      lines.push('작업 종류: ' + S.type);
+      if (S.memo.trim()) lines.push('현장 메모: ' + S.memo.trim());
+      lines.push('사진 ' + S.photos.length + '장(촬영 순서대로). 사진에 보이는 것을 근거로 써라.');
+      lines.push('브랜드: ' + b.label);
+    } else {
+      lines.push('작업 종류: 정보글');
+      lines.push('모드: ' + MODES[S.mode].label);
+      if (S.mode === 'topic') {
+        lines.push('주제: ' + S.topic.trim());
+        lines.push('위 주제에서 벗어나지 않는다. 주제를 바꾸거나 넓히지 않는다.');
+      } else if (S.pick) {
+        lines.push('주제: ' + S.pick.trim());
+        lines.push('위 주제로 쓴다. 주제를 바꾸지 않고, 최근 글과 같은 각도로 쓰지 않는다.');
+      } else {
+        lines.push('주제: 네가 새로 하나 고른다. (운영자는 주제를 비워 두었다)');
+        lines.push('주제 범위: ' + (S.brand === 'swo621'
+          ? '일반·생활 정보 — 사무실·생활·계절·장비 관리 등, 사무기기와 무관해도 된다.'
+          : '경기남부 사무실의 복합기·프린터·복사기 임대·수리·유지관리·스캔·네트워크·토너·보안.'));
+        lines.push('아래 최근 글과 같은 소재·같은 각도는 피하고, 처음 다루는 주제를 고른다.');
+        const recent = recentForPrompt(12);
+        if (recent.length) {
+          lines.push('최근에 이미 쓴 글(중복 금지):');
+          recent.forEach((t) => lines.push('- ' + t));
+        } else {
+          lines.push('최근에 쓴 글이 없다.');
+        }
+      }
+      if (S.memo.trim()) lines.push('참고 메모(꼭 반영): ' + S.memo.trim());
+      if (S.photos.length) {
+        lines.push('사진 ' + S.photos.length + '장을 함께 보낸다. 글의 근거가 아니라 보조 자료다. 사진에 없는 내용을 사진에서 본 것처럼 쓰지 마라.');
+      } else {
+        lines.push('사진은 없다. 사진·현장 목격을 언급하지 마라.');
+      }
+      lines.push('브랜드: ' + b.label);
+    }
     lines.push('');
     lines.push('아래 형식 그대로 출력하라. 다른 말·머리말·코드블록 표시를 쓰지 않는다.');
     lines.push('');
+    if (info) lines.push('[TOPIC] 이번 글의 주제 (한 줄, 30자 안팎)');
     lines.push('[TITLE1] 첫 번째 제목');
     lines.push('[TITLE2] 두 번째 제목');
     lines.push('[TITLE3] 세 번째 제목');
@@ -511,7 +756,7 @@
     const key = apiKey();
     const body = {
       contents: [{ role: 'user', parts }],
-      systemInstruction: { parts: [{ text: systemFor(S.brand) }] },
+      systemInstruction: { parts: [{ text: systemFor(S.brand, S.mode) }] },
       generationConfig: {
         temperature: 1.0,
         maxOutputTokens: maxTokens || 8192,
@@ -542,10 +787,10 @@
   }
 
   function parseSections(text) {
-    const tags = ['TITLE1', 'TITLE2', 'TITLE3', 'BLOG', 'TAGS', 'THREADS', 'SHORTS', 'INSTA', 'YT_TITLE', 'YT_DESC'];
+    const tags = ['TOPIC', 'TITLE1', 'TITLE2', 'TITLE3', 'BLOG', 'TAGS', 'THREADS', 'SHORTS', 'INSTA', 'YT_TITLE', 'YT_DESC'];
     const norm = text.replace(/\r/g, '').replace(/\*\*\[?/g, '');
     const hits = [];
-    const re = /\[(TITLE1|TITLE2|TITLE3|BLOG|TAGS|THREADS|SHORTS|INSTA|YT_TITLE|YT_DESC)\]/g;
+    const re = /\[(TOPIC|TITLE1|TITLE2|TITLE3|BLOG|TAGS|THREADS|SHORTS|INSTA|YT_TITLE|YT_DESC)\]/g;
     let m;
     while ((m = re.exec(norm)) !== null) hits.push({ tag: m[1], start: m.index, end: m.index + m[0].length });
     const out = {};
@@ -553,6 +798,7 @@
       const stop = i + 1 < hits.length ? hits[i + 1].start : norm.length;
       const v = norm.slice(h.end, stop).trim();
       if (!out[h.tag]) out[h.tag] = v;
+      else if (h.tag === 'SHORTS') out[h.tag] += '\n' + v;   // 모델이 [SHORTS]를 줄마다 반복해도 살린다
     });
     return out;
   }
@@ -590,8 +836,14 @@
       go('settings');
       return;
     }
-    if (!S.photos.length && !S.memo.trim()) {
-      toast('사진이나 메모 중 하나는 있어야 합니다.', true);
+    if (S.mode === 'field') {
+      if (!S.photos.length && !S.memo.trim()) {
+        toast('사진이나 메모 중 하나는 있어야 합니다.', true);
+        return;
+      }
+    } else if (S.mode === 'topic' && !S.topic.trim()) {
+      toast('주제를 한 줄 적어 주세요. 아래 추천 주제를 눌러도 됩니다.', true);
+      $('#topicInput').focus();
       return;
     }
     S.busy = true;
@@ -672,7 +924,9 @@
       id: 'r' + Date.now(),
       at: new Date().toISOString(),
       brand: S.brand,
-      type: S.type,
+      mode: S.mode,
+      topic: String(sec.TOPIC || (S.mode === 'topic' ? S.topic : S.pick) || '').replace(/^["'“”]|["'“”]$/g, '').trim(),
+      type: S.mode === 'field' ? S.type : '정보글',
       memo: S.memo.trim(),
       titles: titles.length ? titles : ['(제목 없음)'],
       blogHtml: sec.BLOG || '',
@@ -717,12 +971,23 @@
     $('#resultBody').classList.remove('hidden');
     $('#resModel').textContent = r.model || '–';
 
+    const info = !!r.mode && r.mode !== 'field';
+    const topic = String(r.topic || '').trim();
+    $('#resTopicCard').classList.toggle('hidden', !(info && topic));
+    if (info && topic) {
+      $('#resModeLabel').textContent = MODES[r.mode] ? MODES[r.mode].label : '정보성';
+      $('#resTopic').textContent = topic;
+    }
+
     const tl = $('#titleList');
     tl.innerHTML = '';
+    const titleKinds = info
+      ? ['① 핵심 정리형', '② 검색 질문형', '③ 체크리스트형']
+      : ['① 기종+증상+해결', '② 검색 질문형', '③ 현장 후기형'];
     r.titles.forEach((t, i) => {
       const b = document.createElement('button');
       b.className = 't' + (i === S.selTitle ? ' on' : '');
-      b.innerHTML = '<span>' + esc(t) + '</span><small>' + ['① 기종+증상+해결', '② 검색 질문형', '③ 현장 후기형'][i] + '</small>';
+      b.innerHTML = '<span>' + esc(t) + '</span><small>' + (titleKinds[i] || '') + '</small>';
       b.addEventListener('click', () => { S.selTitle = i; renderResult(); });
       tl.appendChild(b);
     });
@@ -765,9 +1030,13 @@
         rt.appendChild(d);
       });
       $('#resPhotoMeta').textContent = S.photos.length + '장 · 눌러서 저장';
+      $('#resPhotoCard').classList.remove('hidden');
+    } else if (info) {
+      $('#resPhotoCard').classList.add('hidden');
     } else {
       rt.innerHTML = '<div class="muted" style="grid-column:1/-1">이 원고는 기록에서 열었습니다. 사진은 그때 쓰던 기기에만 남습니다.</div>';
       $('#resPhotoMeta').textContent = '';
+      $('#resPhotoCard').classList.remove('hidden');
     }
 
     $$('#seg button').forEach((b) => b.classList.toggle('on', b.dataset.p === S.pane));
@@ -986,9 +1255,11 @@
       d.style.textAlign = 'left';
       const dt = new Date(h.at);
       const stamp = (dt.getMonth() + 1) + '/' + dt.getDate() + ' ' + String(dt.getHours()).padStart(2, '0') + ':' + String(dt.getMinutes()).padStart(2, '0');
-      d.innerHTML = (h.thumb ? '<img alt="" src="' + h.thumb + '">' : '<img alt="">') +
+      d.innerHTML = (h.thumb ? '<img alt="" src="' + h.thumb + '">'
+          : '<div class="noimg">' + (h.mode && h.mode !== 'field' ? '📝' : '📷') + '</div>') +
         '<div class="t"><b>' + esc(h.titles[0] || '(제목 없음)') + '</b>' +
-        '<span>' + stamp + ' · ' + esc(BRANDS[h.brand] ? BRANDS[h.brand].name : h.brand) + ' · ' + esc(h.type) + '</span></div>' +
+        '<span>' + stamp + ' · ' + esc(BRANDS[h.brand] ? BRANDS[h.brand].name : h.brand) + ' · ' +
+        esc(h.mode === 'topic' ? '정보성·지정' : h.mode === 'random' ? '정보성·랜덤' : h.type) + '</span></div>' +
         '<span class="badge">열기</span>';
       d.addEventListener('click', () => {
         S.result = h;
@@ -1041,6 +1312,20 @@
   function bind() {
     $$('#tabs .tab').forEach((b) => b.addEventListener('click', () => go(b.dataset.v)));
     $('#goWrite').addEventListener('click', () => go('write'));
+    $$('#modeTabs .modecard').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.m)));
+    $('#topicInput').addEventListener('input', (e) => {
+      S.topic = e.target.value;
+      $$('#topicChips .chip').forEach((x) => x.classList.toggle('on', x.textContent === S.topic.trim()));
+    });
+    $('#rollBtn').addEventListener('click', () => {
+      const t = rollTopic();
+      toast('주제를 뽑았습니다: ' + (t.length > 22 ? t.slice(0, 22) + '…' : t));
+    });
+    $('#clearPick').addEventListener('click', () => {
+      S.pick = '';
+      paintPick();
+      toast('주제를 비웠습니다 · AI가 최근 글을 피해 새로 고릅니다');
+    });
     $('#addPhoto').addEventListener('click', () => $('#fileInput').click());
     $('#fileInput').addEventListener('change', async (e) => {
       await addPhotos(e.target.files);
@@ -1237,6 +1522,7 @@
     bindCanvas();
     bind();
     paintBrand();
+    setMode(S.mode);
     paintThumbs();
     paintHome();
     paintSettings();
