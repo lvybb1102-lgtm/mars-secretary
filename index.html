@@ -211,6 +211,7 @@ input,textarea,select{font-family:inherit;color:inherit}
 .m-ai .a-time{font-size:10px;color:#B7A492}
 .tag{font-size:9px;font-weight:800;padding:1px 5px;border-radius:6px;letter-spacing:-.2px;background:#F1E7D6;color:#967A5A}
 .tag.ai{background:#E7F0FB;color:#3E6F9E}
+.tag.gpt{background:#E9F6EE;color:#2C7A55}
 .tag.err{background:#FDECEA;color:#B04A32}
 .m-ai .bubble{
   background:#FDF8EE;border:1px solid #EFE3CF;
@@ -479,6 +480,15 @@ input,textarea,select{font-family:inherit;color:inherit}
 .gd-act button.del{color:#B04A32;border-color:#EFCFC4;background:#FFF7F4}
 .gd-empty{font-size:11px;color:#A89480;background:#FBF7F0;border:1px dashed var(--line-2);
   border-radius:11px;padding:12px;text-align:center;line-height:1.6;margin-bottom:7px}
+/* GPT 모델별 1회 예상 비용 목록 */
+.gpt-price{border:1px solid var(--line-2);border-radius:10px;background:#fff;overflow:hidden;margin:2px 0 8px}
+.gpt-row{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:6px 9px;border-top:1px dashed #F1E6D4;font-size:10.5px;color:#6B5644}
+.gpt-row:first-child{border-top:0}
+.gpt-row.on{background:#FFF9EC}
+.gpt-row .nm{min-width:0;font-weight:800;color:#3B2A1C;line-height:1.35}
+.gpt-row .nm i{display:block;font-style:normal;font-weight:600;color:#A89480;font-size:9.5px}
+.gpt-row b{flex:0 0 auto;color:#2C7A55;font-weight:800;white-space:nowrap}
 .field .hint{font-size:10px;margin-top:4px;line-height:1.5}
 .row{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
 .seg{display:flex;border:1px solid var(--line-2);border-radius:11px;overflow:hidden;background:#fff}
@@ -742,6 +752,7 @@ input,textarea,select{font-family:inherit;color:inherit}
      막히면 메모리에 보관하고, 화면 배지로 알린 뒤 JSON 백업을 권합니다. */
   const LS_STATE = 'mars_secretary_mobile_state_v1';
   const LS_API = 'mars_secretary_mobile_gemini_v1';
+  const LS_OPENAI = 'mars_secretary_mobile_openai_v1';
   const LS_PROBE = 'mars_secretary_mobile_probe';
   const memStore = Object.create(null);
   let storeOK = true;
@@ -825,13 +836,19 @@ input,textarea,select{font-family:inherit;color:inherit}
       role: 'AS·PC·개발·자동화',
       aliases: ['공돌이', '기술', '개발', 'AS', '에이에스'],
       status: '대기중', lastReport: '', todayCount: 0, countDate: ''
+    },
+    {
+      id: 'gpt', name: '지피티', emoji: '🧠', title: '전략 비서', tint: '#E7F4EC', color: '#2F7D57',
+      role: '전략·분석·비교 (OpenAI GPT)',
+      aliases: ['지피티', 'gpt', 'chatgpt', '오픈에이아이', '오픈ai', '전략'],
+      status: '대기중', lastReport: '', todayCount: 0, countDate: ''
     }
   ]);
 
   function defaultState() {
     const t = nowISO();
     return {
-      version: 4,
+      version: 5,
       profile: { officeName: '마르스 비서실', ownerName: '마르스', ownerTitle: '대장님', ownerEmoji: '👑' },
       assistants: DEFAULT_ASSISTANTS(),
       rooms: [
@@ -845,10 +862,11 @@ input,textarea,select{font-family:inherit;color:inherit}
           { id: uid('m'), type: 'assistant', senderId: 'nike', text: '대회의실입니다, 대장님. 큰 결정이나 여러 비서가 같이 봐야 할 안건은 여기서 다루겠습니다. 🪽', at: t }
         ],
         cmd: [
-          { id: uid('m'), type: 'assistant', senderId: 'nike', text: '네, 대장님! 마르스 비서실 문 열었습니다.\n지시는 @니케·@홍보니·@셈순이·@공돌이, 또는 @all로 내려주세요. 지목된 비서가 먼저 "실행하겠습니다" 보고를 올리고 작업실에 카드를 만듭니다. 🪽', at: t },
+          { id: uid('m'), type: 'assistant', senderId: 'nike', text: '네, 대장님! 마르스 비서실 문 열었습니다.\n지시는 @니케·@홍보니·@셈순이·@공돌이·@지피티, 또는 @all로 내려주세요. 지목된 비서가 먼저 "실행하겠습니다" 보고를 올리고 작업실에 카드를 만듭니다. 🪽', at: t },
           { id: uid('m'), type: 'assistant', senderId: 'hongbo', text: '준비됐습니다, 대장님! 블로그·쇼츠·스레드 3채널은 제가 맡습니다. 오늘 올릴 소재만 던져주시면 초안부터 뽑겠습니다. 📢', at: t },
           { id: uid('m'), type: 'assistant', senderId: 'semsoon', text: '세금계산서·미수금·거래처 대조는 제 몫입니다. 금액이 걸린 건은 제가 임의로 손대지 않고 확인 받고 움직이겠습니다, 대장님. 🧾', at: t },
-          { id: uid('m'), type: 'assistant', senderId: 'gongdol', text: 'AS·PC·개발 접수 대기 중입니다, 대장님. 기종과 증상만 주시면 부품 단가·출장 일정까지 붙여 올리겠습니다. 🛠️', at: t }
+          { id: uid('m'), type: 'assistant', senderId: 'gongdol', text: 'AS·PC·개발 접수 대기 중입니다, 대장님. 기종과 증상만 주시면 부품 단가·출장 일정까지 붙여 올리겠습니다. 🛠️', at: t },
+          { id: uid('m'), type: 'assistant', senderId: 'gpt', text: '전략·분석·비교는 제가 맡습니다, 대장님. 두 안을 같은 기준으로 놓고 비교하거나 숫자를 검증할 일이 있으면 @지피티로 불러 주세요. 🧠', at: t }
         ],
         lounge: [
           { id: uid('m'), type: 'assistant', senderId: 'nike', text: '라운지입니다. 편하게 이야기 나누는 자리로 쓰시면 됩니다, 대장님. ☕', at: t }
@@ -864,7 +882,8 @@ input,textarea,select{font-family:inherit;color:inherit}
         showCost: true,
         imageModel: 'gemini-nano-banana-2.1',   // 🎨 이미지 생성 기본 모델
         imageSize: '1K',
-        imageAspect: '1:1'
+        imageAspect: '1:1',
+        openaiModel: 'gpt-6-luna'               // 🧠 지피티(OpenAI) 기본 모델
       },
       ui: { senderId: 'owner', tab: 'chat', taskFilter: 'all' },
       meta: { createdAt: t, updatedAt: t, welcomed: false }
@@ -873,7 +892,10 @@ input,textarea,select{font-family:inherit;color:inherit}
 
   /* ───────── 상태 ───────── */
   let state = null;
-  const ai = { apiKey: '', enabled: false, masked: '' };
+  const ai = {
+    apiKey: '', enabled: false, masked: '',                 // Google Gemini
+    openaiKey: '', openaiEnabled: false, openaiMasked: ''    // OpenAI (지피티)
+  };
   let busy = false;
   let saveTimer = null;
   const draft = {};
@@ -890,6 +912,9 @@ input,textarea,select{font-family:inherit;color:inherit}
     if (!['gemini-3.5-flash-lite', 'gemini-2.5-flash-lite', 'gemini-3.5-flash'].includes(out.settings.model)) {
       out.settings.model = 'gemini-3.5-flash-lite';
     }
+    if (!Object.prototype.hasOwnProperty.call(OPENAI_MODELS, out.settings.openaiModel)) {
+      out.settings.openaiModel = OPENAI_DEFAULT_MODEL;
+    }
     if (!Object.prototype.hasOwnProperty.call(IMAGE_MODELS, out.settings.imageModel)) {
       out.settings.imageModel = 'gemini-nano-banana-2.1';
     }
@@ -904,6 +929,10 @@ input,textarea,select{font-family:inherit;color:inherit}
       merged.aliases = (Array.isArray(a.aliases) && a.aliases.length) ? a.aliases : base.aliases;
       merged.todayCount = Number(a.todayCount) || 0;
       return merged;
+    });
+    /* 예전 저장본에 없던 비서(예: 지피티)는 기본값으로 채워 넣는다 */
+    d.assistants.forEach((base) => {
+      if (!out.assistants.some((a) => a.id === base.id)) out.assistants.push(Object.assign({}, base));
     });
     if (!Array.isArray(out.rooms) || !out.rooms.length) out.rooms = d.rooms;
     if (!out.messages || typeof out.messages !== 'object') out.messages = {};
@@ -1036,6 +1065,18 @@ input,textarea,select{font-family:inherit;color:inherit}
     if (k) storeSet(LS_API, k); else storeDel(LS_API);
     loadKey();
   }
+  function loadOpenaiKey() {
+    let key = '';
+    try { key = String(storeGet(LS_OPENAI) || '').trim(); } catch (e) { key = ''; }
+    ai.openaiKey = key;
+    ai.openaiEnabled = !!key;
+    ai.openaiMasked = maskKey(key);
+  }
+  function setOpenaiKey(key) {
+    const k = String(key || '').trim();
+    if (k) storeSet(LS_OPENAI, k); else storeDel(LS_OPENAI);
+    loadOpenaiKey();
+  }
 
   function renderStoreBadge() {
     const b = $('#storeBadge');
@@ -1057,7 +1098,34 @@ input,textarea,select{font-family:inherit;color:inherit}
     'gemini-2.5-flash-lite': { in: 0.10, out: 0.40 },
     'gemini-3.5-flash': { in: 0.30, out: 2.50 }
   };
-  function priceOf(model) { return PRICING[model] || PRICING['gemini-3.5-flash-lite']; }
+  /* 🧠 OpenAI (지피티) 모델·단가 — 2026-11-27 platform.openai.com/docs/pricing 확인 (USD / 1M토큰) */
+  const OPENAI_MODELS = {
+    'gpt-6-luna': { label: 'GPT-6 Luna', note: '최저가 · 기본', in: 0.10, out: 0.50, reasoning: true },
+    'gpt-5-mini': { label: 'GPT-5 mini', note: '안정판 · 저가', in: 0.25, out: 2.00, reasoning: true },
+    'gpt-6.1-terra': { label: 'GPT-6.1 Terra', note: '균형 · 사진 판독', in: 1.00, out: 5.00, reasoning: true },
+    'gpt-6.2-sol': { label: 'GPT-6.2 Sol', note: '품질 우선', in: 2.00, out: 10.00, reasoning: true },
+    'gpt-4o-mini': { label: 'GPT-4o mini', note: '구형 · 2027-01-14 지원종료 예정', in: 0.15, out: 0.60, reasoning: false },
+    'gpt-4.1-mini': { label: 'GPT-4.1 mini', note: '구형 · 안정', in: 0.40, out: 1.60, reasoning: false }
+  };
+  const OPENAI_DEFAULT_MODEL = 'gpt-6-luna';
+  const OPENAI_EST_IN = 2000;   // 지침·대화·지시 포함 보수적 입력 토큰
+  const OPENAI_EST_OUT = 700;   // 답변 + 생각(reasoning) 토큰
+
+  function priceOf(model) {
+    if (PRICING[model]) return PRICING[model];
+    if (OPENAI_MODELS[model]) return { in: OPENAI_MODELS[model].in, out: OPENAI_MODELS[model].out };
+    return PRICING['gemini-3.5-flash-lite'];
+  }
+  function normalizeOpenAIModel(m) {
+    const s = String(m || '').trim();
+    return Object.prototype.hasOwnProperty.call(OPENAI_MODELS, s) ? s : OPENAI_DEFAULT_MODEL;
+  }
+  function openaiEstimateWon(model) {
+    const o = OPENAI_MODELS[normalizeOpenAIModel(model)];
+    const usd = (OPENAI_EST_IN / 1e6) * o.in + (OPENAI_EST_OUT / 1e6) * o.out;
+    const krw = usd * USD_KRW;
+    return krw < 10 ? Math.round(krw * 10) / 10 : Math.round(krw);
+  }
   function estimateCost(model, pt, ot) {
     const p = priceOf(model);
     const usd = (pt / 1e6) * p.in + (ot / 1e6) * p.out;
@@ -1108,14 +1176,14 @@ input,textarea,select{font-family:inherit;color:inherit}
   function renderCost() {
     const chip = $('#costChip');
     if (!chip) return;
-    const show = !!(ai.enabled && state && state.settings.showCost);
+    const show = !!((ai.enabled || ai.openaiEnabled) && state && state.settings.showCost);
     chip.classList.toggle('hide', !show);
     if (!show) return;
     const t = usageToday();
     chip.textContent = '💰 오늘 ' + t.calls + '회 · ' + wonText(t.krw);
-    chip.title = 'Gemini 호출 ' + t.calls + '회 · 입력 ' + t.promptTokens.toLocaleString('ko-KR') +
+    chip.title = 'AI 호출 ' + t.calls + '회 · 입력 ' + t.promptTokens.toLocaleString('ko-KR') +
       ' + 출력 ' + t.outputTokens.toLocaleString('ko-KR') + ' 토큰 · 약 ' + wonText(t.krw) +
-      '원 (환율 ' + USD_KRW + '원 기준 추정)';
+      '원 (Gemini·GPT 합산, 환율 ' + USD_KRW + '원 기준 추정)';
   }
 
   /* ───────── 렌더 ───────── */
@@ -1189,7 +1257,8 @@ input,textarea,select{font-family:inherit;color:inherit}
     const a = assistantById(m.senderId) || state.assistants[0];
     let tag = '';
     if (m.tag === 'AI') tag = '<span class="tag ai">AI</span>';
-    else if (m.tag === '로컬' && ai.enabled) tag = '<span class="tag">로컬</span>';
+    else if (m.tag === 'GPT') tag = '<span class="tag gpt">GPT</span>';
+    else if (m.tag === '로컬' && (ai.enabled || ai.openaiEnabled)) tag = '<span class="tag">로컬</span>';
     else if (m.tag === '오류') tag = '<span class="tag err">오류</span>';
     return '<div class="m-ai" style="--tint:' + esc(a.tint) + '">' +
       '<div class="a-avatar">' + esc(a.emoji) + '</div>' +
@@ -1371,7 +1440,8 @@ input,textarea,select{font-family:inherit;color:inherit}
     nike: ['blog', 'tax', 'as', 'price', 'schedule', 'doc'],
     hongbo: ['blog', 'price', 'doc', 'schedule', 'as', 'tax'],
     semsoon: ['tax', 'price', 'schedule', 'doc', 'blog', 'as'],
-    gongdol: ['as', 'price', 'schedule', 'doc', 'blog', 'tax']
+    gongdol: ['as', 'price', 'schedule', 'doc', 'blog', 'tax'],
+    gpt: ['doc', 'price', 'schedule', 'tax', 'as', 'blog']
   };
   function pickTopic(a, text) {
     const found = topicsOf(text);
@@ -1416,13 +1486,23 @@ input,textarea,select{font-family:inherit;color:inherit}
       schedule: '방문 일정은 이동 시간까지 계산해서 무리 없는 순서로 잡겠습니다.',
       doc: '자료 정리는 스크립트로 돌려서 빠짐없이 뽑아내겠습니다.',
       general: '접수 내용 확인하고, 필요한 장비·부품·일정까지 한 번에 정리해 올리겠습니다.'
+    },
+    gpt: {
+      blog: '소재를 3안으로 나눠 예상 반응·제작 시간·비용을 같은 기준으로 비교하고, 1안부터 붙이겠습니다.',
+      tax: '숫자는 기준을 먼저 맞추겠습니다. 청구·입금·미수금을 같은 기간으로 놓고 차액만 표로 뽑겠습니다.',
+      as: '증상으로 원인 후보를 좁혀 부품비·출장비·교체비를 비교해 어떤 선택이 남는지 정리하겠습니다.',
+      price: '가격은 A/S 조건·소모품·부가세 포함 여부를 같은 기준으로 놓고 3안을 표로 비교하겠습니다.',
+      schedule: '일정은 이동 시간과 우선순위를 넣어 2안으로 짜고, 각각의 리스크를 붙이겠습니다.',
+      doc: '문서는 결론·근거·다음 액션 3단으로 다시 정리하고 빠진 숫자를 짚겠습니다.',
+      general: '안건을 쪼개 선택지·비용·리스크를 같은 기준으로 비교한 표를 올리겠습니다.'
     }
   };
   const CLOSERS = {
     nike: ['진행 상황은 작업실 카드에 계속 올리겠습니다. 🪽', '결과 나오면 짧게 보고드리겠습니다. 🪽', '중간에 막히는 부분 있으면 바로 올리겠습니다. 🪽'],
     hongbo: ['초안 나오면 확인만 받겠습니다! 📢', '오늘 안에 1차 버전 올리겠습니다! 📢', '소재부터 빠르게 뽑아 보겠습니다! 📢'],
     semsoon: ['금액 확인이 필요한 부분은 따로 표시해 두겠습니다. 🧾', '대조 끝나면 차액만 정리해서 올리겠습니다. 🧾', '증빙 빠진 건은 목록으로 뽑아 두겠습니다. 🧾'],
-    gongdol: ['필요한 부품 있으면 먼저 알려드리고 주문하겠습니다. 🛠️', '출장 가능한 시간대 정리해서 올리겠습니다. 🛠️', '처리 후 결과와 비용까지 같이 올리겠습니다. 🛠️']
+    gongdol: ['필요한 부품 있으면 먼저 알려드리고 주문하겠습니다. 🛠️', '출장 가능한 시간대 정리해서 올리겠습니다. 🛠️', '처리 후 결과와 비용까지 같이 올리겠습니다. 🛠️'],
+    gpt: ['결론과 근거를 같이 올리겠습니다. 🧠', '숫자는 확인된 값만 쓰고 모르는 건 비워 두겠습니다. 🧠', '비교표 나오면 추천 1개까지 집어 드리겠습니다. 🧠']
   };
 
   function smartReply(a, text) {
@@ -1513,13 +1593,15 @@ input,textarea,select{font-family:inherit;color:inherit}
       nike: '차분한 총괄. 결론·배분·일정 중심. 다른 비서의 일을 대신하지 말고 "누구에게 붙였는지"와 "내가 확인할 지점"만 말함.',
       hongbo: '산출물 중심. 블로그·쇼츠·카드뉴스·스레드의 개수·구성·게시 시각·문안까지 구체적으로. 톤은 지침에 있는 브랜드 기준을 따름.',
       semsoon: '꼼꼼하고 신중. 금액·거래처·대조 기준·증빙 중심. 금액 처리는 승인 후 진행이라고 명시.',
-      gongdol: '실무적이고 건조하게. 기종·증상·부품·일정·기술 절차를 순서대로 짧게.'
+      gongdol: '실무적이고 건조하게. 기종·증상·부품·일정·기술 절차를 순서대로 짧게.',
+      gpt: '전략 참모. 선택지를 같은 기준으로 놓고 비교하고, 리스크와 추천 1개를 근거와 함께.'
     };
     const kw = {
       nike: '판단·배분·일정',
       hongbo: '문안·구성·발행',
       semsoon: '금액·대조·증빙',
-      gongdol: '기술·절차·부품'
+      gongdol: '기술·절차·부품',
+      gpt: '비교·판단·리스크'
     };
     const d = new Date();
     const dayStr = d.getFullYear() + '년 ' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일 ' +
@@ -1688,6 +1770,151 @@ input,textarea,select{font-family:inherit;color:inherit}
     };
   }
 
+  /* ───────── 🧠 OpenAI(지피티) REST 직접 호출 (브라우저 → OpenAI) ───────── */
+  const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
+
+  function buildGptSystem(a) {
+    const p = state.profile;
+    const gb = guideBlock(GUIDE_MAX_TOTAL);
+    const d = new Date();
+    const dayStr = d.getFullYear() + '년 ' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일 ' +
+      ['일', '월', '화', '수', '목', '금', '토'][d.getDay()] + '요일';
+    const out = [];
+    out.push('너는 "' + (p.officeName || '마르스 비서실') + '"의 전략 비서 "' + ((a && a.name) || '지피티') + '"(OpenAI GPT)다. 말투 흉내가 아니라 실제로 판단을 내리는 참모로 행동한다.');
+    out.push('사용자는 "' + (p.ownerName || '마르스') + '" 님(호칭: ' + (p.ownerTitle || '대장님') + ')이며, 경기 수원에서 사무기기(복사기·프린터·스캐너) 임대·수리·초과사용량 청구와 기업용 PC 공급을 하는 "수우전산"을 운영한다.');
+    out.push('오늘: ' + dayStr + ' (Asia/Seoul)');
+    out.push('담당: 전략·분석·비교. 선택지를 같은 기준으로 놓고 비교표·시나리오·리스크·우선순위로 판단을 돕는다. 다른 비서(홍보니=마케팅, 셈순이=경리, 공돌이=기술, 니케=총괄)의 실행을 대신하지 않고, 필요하면 "누구에게 붙일지"만 짚는다.');
+    out.push('');
+    if (gb.text) {
+      out.push('[최우선 규칙 — 대장님이 직접 넣은 비서실 지침]');
+      out.push('아래 지침은 일반 상식·기본 성향보다 우선한다. 숫자·순서·표기·금지사항을 그대로 따른다. 지침을 적용했으면 근거를 짧게 밝힌다. 지침에 없는 내용을 지침에 있는 것처럼 말하지 않는다.');
+      out.push('');
+      out.push(gb.text);
+      out.push('');
+    } else {
+      out.push('[지침] 아직 등록된 지침이 없다. 일반적인 실무 참모 기준으로 답한다.');
+      out.push('');
+    }
+    out.push('[답변 기준 — 이걸 어기면 실패다]');
+    out.push('1) 인사·감탄·다짐으로 시작하지 않는다. 첫 문장은 결론이나 판단이다.');
+    out.push('2) 비교할 일이면 기준을 먼저 밝히고 선택지를 나란히 놓아 표로 보여준다. 마지막에 추천 1개와 그 이유를 붙인다.');
+    out.push('3) 확인된 값만 쓴다. 모르는 값은 "확인 필요"로 남기고 숫자·날짜·거래처명·링크를 지어내지 않는다.');
+    out.push('4) 승인 없이 대외 발송·결제·예약·계약·타인 연락을 "했다"고 말하지 않는다. 필요하면 "승인 후 실행"으로 적는다.');
+    out.push('5) 분량은 3~6문장 또는 짧은 목록, 600자 이내. 이모지는 최대 1개.');
+    out.push('6) 출력은 일반 텍스트만. JSON·코드블록으로 감싸지 않는다.');
+    return out.join('\n');
+  }
+
+  /* 지피티에게 넘길 최근 대화(시스템 고지만 있는 줄은 뺀다) */
+  function historyForOpenAI() {
+    const list = (state.messages[state.activeRoom] || []).filter((m) => m.type !== 'system').slice(-8);
+    return list.map((m) => {
+      const fromOwner = m.type === 'user' || m.senderId === 'owner';
+      const who = (assistantById(m.senderId) || {}).name || '비서';
+      return {
+        role: fromOwner ? 'user' : 'assistant',
+        text: (fromOwner ? '' : who + ': ') + String(m.text || '').slice(0, 700)
+      };
+    });
+  }
+
+  function friendlyOpenAIError(status, body) {
+    const err = (body && body.error) || {};
+    const msg = String(err.message || (typeof body === 'string' ? body : '') || '').slice(0, 240);
+    if (status === 401 || /invalid api key|incorrect api key/i.test(msg)) {
+      return 'OpenAI 키가 올바르지 않습니다. platform.openai.com → API keys에서 키를 다시 확인해 주세요.';
+    }
+    if (status === 429) {
+      if (/quota|billing|credit|insufficient/i.test(msg)) return 'OpenAI 결제 잔액·한도가 부족합니다. Billing에서 크레딧을 확인해 주세요.';
+      return 'OpenAI 요청 한도를 넘었습니다(429). 잠시 후 다시 시도해 주세요.';
+    }
+    if (status === 403) return '이 키로는 요청이 막혔습니다(403). 키 권한·조직 설정을 확인해 주세요.';
+    if (status === 404 || /model.*(not found|does not exist)/i.test(msg)) {
+      return '모델을 찾을 수 없습니다. 설정에서 GPT 모델을 다시 골라 주세요.';
+    }
+    if (status === 400) return 'OpenAI 요청이 거부되었습니다(400): ' + (msg || '모델·입력 형식을 확인해 주세요.');
+    return 'OpenAI 호출에 실패했습니다(' + status + '): ' + (msg || '알 수 없는 오류');
+  }
+
+  async function callOpenAI(opts) {
+    const o = opts || {};
+    if (!ai.openaiKey) {
+      throw new Error('OpenAI API 키가 없습니다. ⚙️ 설정 → 🧠 OpenAI에 키를 먼저 저장해 주세요.');
+    }
+    const model = normalizeOpenAIModel(o.model || state.settings.openaiModel);
+    const spec = OPENAI_MODELS[model] || OPENAI_MODELS[OPENAI_DEFAULT_MODEL];
+    const messages = [];
+    const sys = String(o.system || '').trim();
+    if (sys) messages.push({ role: 'system', content: sys });
+    (Array.isArray(o.history) ? o.history : []).slice(-8).forEach((h) => {
+      const t = String((h && h.text) || '').trim();
+      if (!t) return;
+      messages.push({ role: (h.role === 'assistant' || h.role === 'model') ? 'assistant' : 'user', content: t });
+    });
+    const prompt = String(o.prompt || '안녕하세요');
+    const atts = (Array.isArray(o.attach) ? o.attach : []).filter((x) => x && x.data && x.mime).slice(0, 4);
+    if (atts.length) {
+      const parts = [{ type: 'text', text: prompt }];
+      atts.forEach((x) => parts.push({
+        type: 'image_url',
+        image_url: { url: 'data:' + x.mime + ';base64,' + x.data }
+      }));
+      messages.push({ role: 'user', content: parts });
+    } else {
+      messages.push({ role: 'user', content: prompt });
+    }
+
+    const payload = { model: model, messages: messages, max_completion_tokens: o.maxTokens || 1200 };
+    /* 생각(reasoning) 모델은 추론 분량을 낮춰 비용·지연을 줄인다 (구형 4o/4.1 계열은 미지원) */
+    if (spec.reasoning) payload.reasoning_effort = 'low';
+
+    const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    const limit = o.timeoutMs || 90000;
+    const timer = ctrl ? setTimeout(() => { try { ctrl.abort(); } catch (e) { /* 무시 */ } }, limit) : null;
+
+    let res;
+    try {
+      res = await fetch(OPENAI_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + ai.openaiKey
+        },
+        body: JSON.stringify(payload),
+        signal: ctrl ? ctrl.signal : undefined
+      });
+    } catch (e) {
+      if (timer) clearTimeout(timer);
+      if (e && e.name === 'AbortError') {
+        throw new Error('지피티 응답이 ' + Math.round(limit / 1000) + '초를 넘어 중단했습니다. 다시 시도해 주세요.');
+      }
+      throw new Error('OpenAI에 연결하지 못했습니다. Wi-Fi·모바일 데이터를 확인해 주세요. (브라우저·네트워크가 api.openai.com을 막는 경우도 있습니다)');
+    }
+    if (timer) clearTimeout(timer);
+
+    const raw = await res.text();
+    let body = null;
+    try { body = JSON.parse(raw); } catch (e) { body = null; }
+    if (!res.ok) throw new Error(friendlyOpenAIError(res.status, body || raw));
+
+    const j = body || {};
+    const ch = (j.choices || [])[0] || {};
+    const text = String((ch.message && ch.message.content) || '').trim();
+    if (!text) {
+      const why = ch.finish_reason ? (' (finish_reason: ' + ch.finish_reason + ')') : '';
+      throw new Error('지피티가 빈 응답을 돌려줬습니다' + why + '. 다시 시도해 주세요.');
+    }
+    const um = j.usage || {};
+    const promptTokens = um.prompt_tokens || 0;
+    const outputTokens = um.completion_tokens || 0;
+    const cost = recordUsage(model, promptTokens, outputTokens);
+    return {
+      text: text, model: model,
+      usage: { promptTokens: promptTokens, outputTokens: outputTokens, totalTokens: um.total_tokens || (promptTokens + outputTokens) },
+      cost: { usd: cost.usd, krw: cost.krw }
+    };
+  }
+
   /* AI가 돌려준 텍스트에서 [{id,text}] 배열을 최대한 너그럽게 건져낸다 */
   function parseItems(text) {
     const raw = String(text || '').trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
@@ -1754,6 +1981,25 @@ input,textarea,select{font-family:inherit;color:inherit}
       }
     }
     return { map: out, usage: res.usage, cost: res.cost, model: res.model };
+  }
+
+  /* 🧠 @지피티 한 명 호출 — 지침 + 첨부 사진(image_url) + 문서 텍스트를 함께 보낸다 */
+  async function gptReply(a, text, files) {
+    const list = files || [];
+    const pics = list.filter((x) => x.kind === 'image' && x.data);
+    const pdfs = list.filter((x) => x.kind === 'pdf');
+    let note = attachPromptNote(list);
+    if (pdfs.length) {
+      note += '\n\n[안내] PDF ' + pdfs.length + '건은 지피티가 직접 읽을 수 없어 이번 답변에서 제외했습니다. PDF 안의 내용이 필요하면 같은 질문을 @니케 등 Gemini 비서에게도 보내 주세요.';
+    }
+    return await callOpenAI({
+      system: buildGptSystem(a),
+      history: historyForOpenAI(),
+      prompt: '대장님 지시: ' + text.replace(/@[^\s@,]+/g, '').trim() + note + textAttachmentBlock(list),
+      model: state.settings.openaiModel,
+      attach: pics,
+      maxTokens: 1200
+    });
   }
 
   /* ───────── 메시지·작업 ───────── */
@@ -1833,14 +2079,19 @@ input,textarea,select{font-family:inherit;color:inherit}
     if (!text && !files.length) return;
     const senderId = state.ui.senderId || 'owner';
 
-    /* 첨부·이미지 생성은 Gemini 키가 있어야 실제로 읽고 그립니다 */
-    if ((files.length || imgMode) && senderId === 'owner' && !ai.enabled) {
-      toast('⚙️ 사진·파일 읽기와 이미지 생성은 AI 키가 필요합니다. 설정에서 Google AI Studio 키를 넣어 주세요.');
-      openSettings();
-      return;
-    }
     if (!text) {
       text = files.some((x) => x.kind !== 'image') ? '첨부한 파일을 읽고 핵심만 정리해 줘.' : '첨부한 사진을 보고 알려 줘.';
+    }
+
+    /* 사진·PDF 읽기와 이미지 생성은 Gemini 키가 있어야 합니다.
+       단, 지피티(@지피티)에게 사진만 보내는 경우는 OpenAI 키만 있으면 됩니다. */
+    if ((files.length || imgMode) && senderId === 'owner' && !ai.enabled) {
+      const gptPicOnly = !imgMode && ai.openaiEnabled && parseTargets(text).some((a) => a.id === 'gpt');
+      if (!gptPicOnly) {
+        toast('⚙️ 사진·PDF 읽기와 이미지 생성은 Google Gemini 키가 필요합니다(지피티는 사진만 읽습니다). 설정에서 AI Studio 키를 넣어 주세요.');
+        openSettings();
+        return;
+      }
     }
 
     busy = true;
@@ -1874,58 +2125,105 @@ input,textarea,select{font-family:inherit;color:inherit}
       return;
     }
 
-    const targets = parseTargets(text);
+    let targets0 = parseTargets(text);
     if (isChitChat(text)) {
-      const a = targets[0] || state.assistants[0];
+      const a = targets0[0] || state.assistants[0];
       await respondOne(a, chatReply(a, text), 380);
       busy = false; $('#btnSend').disabled = false;
       save(); renderAll();
       return;
     }
 
-    const useAI = files.length ? ai.enabled : shouldUseAI(text);
-    if (useAI) {
-      draft.typingId = targets[0].id;
-      showTyping(targets[0]);
-      renderStaff();
-      try {
-        const t0 = Date.now();
-        const res = await aiReplyBatch(targets, text, files);
-        const elapsed = Date.now() - t0;
-        hideTyping();
-        if (res.fallbackLocal) {
-          addMessage({ type: 'system', text: 'AI 응답 형식을 읽지 못해 이번 지시는 로컬 응답으로 대체했습니다.' });
+    /* ── 🧠 지피티(OpenAI)는 Gemini 합본 호출에서 분리한다 ───────── */
+    let gemTargets = targets0.slice();
+    let gptTarget = null;
+    if (targets0.some((a) => a.id === 'gpt')) {
+      const onlyGpt = targets0.length === 1;
+      gptTarget = targets0.find((a) => a.id === 'gpt');
+      gemTargets = targets0.filter((a) => a.id !== 'gpt');
+      if (!ai.openaiEnabled) {
+        gptTarget = null;
+        if (onlyGpt) {
+          addMessage({ type: 'system', text: '🔑 지피티를 부르려면 OpenAI API 키가 필요합니다. 설정(⚙️) → 「🧠 OpenAI (지피티)」에 sk-... 키를 넣어 주세요.' });
           renderChatOnly(true);
+          save();
+          busy = false; $('#btnSend').disabled = false;
+          toast('🔑 OpenAI 키가 필요합니다 · 설정을 열었습니다');
+          openSettings();
+          setTimeout(() => {
+            const el = $('#setOpenaiKey');
+            if (el) el.scrollIntoView({ block: 'center' });
+          }, 260);
+          return;
         }
-        for (const a of targets) {
-          const body = res.map[a.id] || smartReply(a, text).text;
-          addMessage({ type: 'assistant', senderId: a.id, text: body, tag: res.map[a.id] ? 'AI' : '로컬' });
-          state.tasks.unshift(makeTask(a, text));
-          touchAssistant(a, summarize(body, 60));
-          renderChatOnly(true);
-          await sleep(240);
-        }
-        draft.typingId = null;
-        busy = false; $('#btnSend').disabled = false;
-        save(); renderAll();
-        if (res.cost && res.cost.krw != null) {
-          toast('🤖 AI 1회 호출 · ' + targets.length + '명 응답 · 약 ' + wonText(res.cost.krw) + ' (' + (elapsed / 1000).toFixed(1) + '초)');
-        } else {
-          toast('🤖 AI 응답 완료 · ' + targets.length + '명 (합본 1회 호출)');
-        }
-        return;
-      } catch (e) {
-        hideTyping();
-        draft.typingId = null;
-        toast('⚠️ AI 호출 실패: ' + e.message);
-        addMessage({ type: 'system', text: 'AI 호출 실패 — ' + e.message });
-        addMessage({ type: 'system', text: '이번 지시는 로컬 스마트 모드(무료)로 대신 답합니다.' });
+        addMessage({ type: 'system', text: '🧠 지피티는 OpenAI 키 미등록으로 이번 회의에서 건너뜁니다 · 설정에서 키를 넣으면 함께 답합니다.' });
+        targets0 = targets0.filter((a) => a.id !== 'gpt');
         renderChatOnly(true);
-        save();
       }
     }
 
-    for (const a of targets) {
+    const useAI = !!(gemTargets.length && (files.length ? ai.enabled : shouldUseAI(text)));
+    const useGPT = !!gptTarget;
+    if (useAI || useGPT) {
+      const t0 = Date.now();
+      let gemRes = null, gemErr = null, gptRes = null, gptErr = null;
+
+      if (useGPT) {
+        draft.typingId = gptTarget.id;
+        showTyping(gptTarget, '분석 중…');
+        renderStaff();
+        try { gptRes = await gptReply(gptTarget, text, files); }
+        catch (e) { gptErr = e; }
+        hideTyping();
+      }
+      if (useAI) {
+        draft.typingId = gemTargets[0].id;
+        showTyping(gemTargets[0]);
+        renderStaff();
+        try { gemRes = await aiReplyBatch(gemTargets, text, files); }
+        catch (e) { gemErr = e; }
+        hideTyping();
+      }
+      const elapsed = Date.now() - t0;
+
+      if (gptErr) addMessage({ type: 'system', text: '🧠 지피티 호출 실패 — ' + gptErr.message });
+      if (gemRes && gemRes.fallbackLocal) {
+        addMessage({ type: 'system', text: 'AI 응답 형식을 읽지 못해 이번 지시는 로컬 응답으로 대체했습니다.' });
+      }
+      if (gemErr) {
+        addMessage({ type: 'system', text: 'AI 호출 실패 — ' + gemErr.message });
+        addMessage({ type: 'system', text: '이번 지시는 로컬 스마트 모드(무료)로 대신 답합니다.' });
+      }
+      renderChatOnly(true);
+
+      for (const a of targets0) {
+        let body = '', tag = '로컬';
+        if (a.id === 'gpt') {
+          if (gptRes && gptRes.text) { body = gptRes.text; tag = 'GPT'; }
+        } else if (gemRes && gemRes.map && gemRes.map[a.id]) {
+          body = gemRes.map[a.id]; tag = 'AI';
+        }
+        if (!body) body = smartReply(a, text).text;
+        addMessage({ type: 'assistant', senderId: a.id, text: body, tag: tag });
+        state.tasks.unshift(makeTask(a, text));
+        touchAssistant(a, summarize(body, 60));
+        renderChatOnly(true);
+        await sleep(240);
+      }
+      draft.typingId = null;
+      busy = false; $('#btnSend').disabled = false;
+      save(); renderAll();
+      const totalKrw = (gemRes && gemRes.cost ? gemRes.cost.krw : 0) + (gptRes && gptRes.cost ? gptRes.cost.krw : 0);
+      const calls = (gemRes ? 1 : 0) + (gptRes ? 1 : 0);
+      if (calls) {
+        toast('🤖 AI ' + calls + '회 호출 · ' + targets0.length + '명 응답 · 약 ' + wonText(totalKrw) + ' (' + (elapsed / 1000).toFixed(1) + '초)');
+      } else {
+        toast('🤖 AI 응답 완료 · ' + targets0.length + '명');
+      }
+      return;
+    }
+
+    for (const a of targets0) {
       draft.typingId = a.id;
       showTyping(a);
       renderStaff();
@@ -1943,10 +2241,10 @@ input,textarea,select{font-family:inherit;color:inherit}
     draft.typingId = null;
     busy = false; $('#btnSend').disabled = false;
     save(); renderAll(); renderCost();
-    if (ai.enabled && !useAI) {
-      toast('⚡ 스마트 절약 모드 · 로컬 응답(무료) · 작업실에 ' + targets.length + '건 등록');
+    if ((ai.enabled || ai.openaiEnabled) && !useAI) {
+      toast('⚡ 스마트 절약 모드 · 로컬 응답(무료) · 작업실에 ' + targets0.length + '건 등록');
     } else {
-      toast('📋 작업실에 ' + targets.length + '건 등록했습니다');
+      toast('📋 작업실에 ' + targets0.length + '건 등록했습니다');
     }
   }
 
@@ -2042,7 +2340,7 @@ input,textarea,select{font-family:inherit;color:inherit}
       app: 'mars-secretary-mobile',
       version: 3,
       exportedAt: nowISO(),
-      note: '대화·작업·메모와 비서실 공통 지침이 함께 담깁니다. 생성 이미지는 미리보기만 담기고(원본 제외), Google API 키는 보안을 위해 담기지 않으니 새 기기에서는 설정에서 다시 입력하세요.',
+      note: '대화·작업·메모와 비서실 공통 지침이 함께 담깁니다. 생성 이미지는 미리보기만 담기고(원본 제외), Google·OpenAI API 키는 보안을 위해 담기지 않으니 새 기기에서는 설정에서 다시 입력하세요.',
       state: state
     };
     downloadFile('마르스_비서실_백업_' + today() + '.json', JSON.stringify(pack, null, 2), 'application/json');
@@ -2410,7 +2708,11 @@ input,textarea,select{font-family:inherit;color:inherit}
   }
   function imageAuthor(text) {
     const raws = String(text || '').match(/@[^\s@,]+/g) || [];
-    if (raws.length) { const t = parseTargets(text); if (t && t.length) return t[0]; }
+    if (raws.length) {
+      const t = parseTargets(text).filter((a) => a.id !== 'gpt');   // 이미지는 Gemini가 그린다
+      if (t && t.length) return t[0];
+      return assistantById('hongbo') || state.assistants[0];
+    }
     return assistantById('hongbo') || state.assistants[0];
   }
 
@@ -2775,7 +3077,9 @@ input,textarea,select{font-family:inherit;color:inherit}
       imageModel: state.settings.imageModel || 'gemini-nano-banana-2.1',
       imageSize: state.settings.imageSize || '1K',
       imageAspect: state.settings.imageAspect || '1:1',
-      testResult: draft.sheet ? draft.sheet.testResult : null
+      openaiModel: normalizeOpenAIModel(state.settings.openaiModel),
+      testResult: draft.sheet ? draft.sheet.testResult : null,
+      openaiTestResult: draft.sheet ? draft.sheet.openaiTestResult : null
     };
     draft.gd = null;
     renderSheet();
@@ -3036,6 +3340,36 @@ input,textarea,select{font-family:inherit;color:inherit}
       '대화 기록은 최근 8개만 보내고, 넣은 지침은 활성 분만 통째로 넣어 지침을 실제로 따르게 합니다. 한 번 호출은 보통 <b>1~3원</b> 수준입니다.</div>' +
       '</div>' +
 
+      /* OpenAI · 지피티 */
+      '<div class="sec"><p class="sec-title">🧠 OpenAI (지피티 · 전략)</p>' +
+      '<div class="field"><label>OpenAI API 키 (sk-...)</label>' +
+      '<input id="setOpenaiKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="' +
+      (ai.openaiEnabled ? '등록됨 · ' + esc(ai.openaiMasked) + ' (바꾸려면 새 키 입력)' : 'sk-... 로 시작하는 키 붙여넣기') + '">' +
+      '<div class="hint">키는 <b>이 폰 브라우저에만</b> 저장되고 저장소(GitHub)·백업 파일에는 남지 않습니다. ' +
+      'platform.openai.com → API keys 에서 발급합니다.</div></div>' +
+      '<div class="field"><label>GPT 모델</label><select id="setOpenaiModel">' +
+      Object.keys(OPENAI_MODELS).map((m) => {
+        const o = OPENAI_MODELS[m];
+        return '<option value="' + esc(m) + '"' + (s.openaiModel === m ? ' selected' : '') + '>' +
+          esc(o.label) + ' · 약 ' + wonText(openaiEstimateWon(m)) + '/회 · ' + esc(o.note) + '</option>';
+      }).join('') +
+      '</select><div class="hint">1회 예상은 <b>입력 약 ' + OPENAI_EST_IN.toLocaleString('ko-KR') + ' + 답변 약 ' + OPENAI_EST_OUT.toLocaleString('ko-KR') +
+      '토큰</b>(지침·대화 포함) 기준 추정치입니다. 사진을 붙이면 입력 토큰이 늘어 더 나갑니다.</div></div>' +
+      '<div class="gpt-price">' + Object.keys(OPENAI_MODELS).map((m) => {
+        const o = OPENAI_MODELS[m];
+        return '<div class="gpt-row' + (s.openaiModel === m ? ' on' : '') + '"><span class="nm">' + esc(o.label) +
+          '<i>' + esc(o.note) + ' · 입력 $' + o.in + ' / 출력 $' + o.out + ' (1M토큰)</i></span>' +
+          '<b>' + wonText(openaiEstimateWon(m)) + '</b></div>';
+      }).join('') + '</div>' +
+      '<div class="row"><button class="btn mini" id="btnTestOpenAI">🔌 연결 테스트</button>' +
+      '<button class="btn mini ghost" id="btnClearOpenaiKey">키 삭제</button></div>' +
+      '<div id="openaiTestResult" class="status-line ' + (s.openaiTestResult && s.openaiTestResult.ok ? 'ok' : (s.openaiTestResult ? 'err' : '')) + '">' +
+      esc(s.openaiTestResult ? s.openaiTestResult.msg : '') + '</div>' +
+      '<div class="notice" style="margin-top:9px">🧠 <b>@지피티</b>는 전략·분석·비교 담당입니다. <b>지목하면 지침·첨부 사진을 함께 보내 GPT로 바로 답합니다.</b> ' +
+      '@all로 부르면 Gemini 4명은 <b>합본 1회</b>, 지피티는 <b>별도 1회</b>로 총 2회 호출됩니다. ' +
+      '키가 없으면 지피티만 조용히 빠지고 나머지 4명이 정상으로 답합니다.</div>' +
+      '</div>' +
+
       /* 이미지 생성 */
       '<div class="sec"><p class="sec-title">🎨 이미지 생성 (Nano Banana)</p>' +
       '<div class="field"><label>모델</label><select id="setImgModel">' +
@@ -3078,7 +3412,7 @@ input,textarea,select{font-family:inherit;color:inherit}
       '<div class="hint" style="margin-top:6px">저장 상태: <b>' + (storeOK ? '이 기기 브라우저에 자동 저장' : '자동 저장 막힘 — JSON 백업 권장') +
       '</b> · 대화 ' + Object.keys(state.messages).reduce((n, k) => n + (state.messages[k] || []).length, 0) +
       '건 · 작업 ' + state.tasks.length + '건 · 메모 ' + state.memos.length + '건 · 지침 ' + (state.guidelines || []).length + '건</div>' +
-      '<div class="hint">JSON 백업에는 <b>지침도 함께</b> 담깁니다(API 키는 담기지 않음).</div>' +
+      '<div class="hint">JSON 백업에는 <b>지침도 함께</b> 담깁니다(Google·OpenAI API 키는 담기지 않음).</div>' +
       '</div>' +
 
       /* 폰 사용법 */
@@ -3121,6 +3455,21 @@ input,textarea,select{font-family:inherit;color:inherit}
       setKey('');
       renderSheet(); renderCost();
       toast('API 키를 삭제했습니다. 스마트 모드로 동작합니다.');
+    });
+    const omEl = $('#setOpenaiModel');
+    if (omEl) omEl.addEventListener('change', () => {
+      s.openaiModel = normalizeOpenAIModel(omEl.value);
+      const keys = Object.keys(OPENAI_MODELS);
+      $$('.gpt-row').forEach((row, i) => row.classList.toggle('on', keys[i] === s.openaiModel));
+    });
+    const testOa = $('#btnTestOpenAI');
+    if (testOa) testOa.addEventListener('click', () => testOpenAI());
+    const clearOa = $('#btnClearOpenaiKey');
+    if (clearOa) clearOa.addEventListener('click', () => {
+      if (!confirm('저장된 OpenAI API 키를 삭제할까요? (@지피티가 GPT 대신 로컬 응답으로 바뀝니다)')) return;
+      setOpenaiKey('');
+      renderSheet(); renderCost();
+      toast('OpenAI 키를 삭제했습니다.');
     });
     const bk = $('#btnBackup');
     if (bk) bk.addEventListener('click', backupJSON);
@@ -3175,12 +3524,47 @@ input,textarea,select{font-family:inherit;color:inherit}
     }
   }
 
+  async function testOpenAI() {
+    const s = draft.sheet;
+    const keyEl = $('#setOpenaiKey');
+    const resEl = $('#openaiTestResult');
+    if (!resEl || !s) return;
+    const typed = keyEl ? keyEl.value.trim() : '';
+    resEl.className = 'status-line';
+    resEl.textContent = '확인 중…';
+    try {
+      if (typed) { setOpenaiKey(typed); if (keyEl) keyEl.value = ''; }
+      if (!ai.openaiKey) throw new Error('OpenAI API 키를 먼저 입력해 주세요.');
+      const j = await callOpenAI({
+        system: '짧게 답하세요.',
+        prompt: '연결 확인. "연결 정상"이라고만 답하세요.',
+        model: s.openaiModel,
+        maxTokens: 60,
+        timeoutMs: 60000
+      });
+      resEl.className = 'status-line ok';
+      resEl.textContent = '✅ 연결 정상 · ' + j.model + ' · 약 ' + wonText(j.cost && j.cost.krw) + ' 사용';
+      s.openaiTestResult = { ok: true, msg: resEl.textContent };
+      s.lastUsage = new Date().toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit' }) +
+        ' · ' + j.model + ' · ' + wonText(j.cost && j.cost.krw);
+      renderCost();
+      save(); saveNow();
+    } catch (e) {
+      resEl.className = 'status-line err';
+      resEl.textContent = '⚠️ ' + e.message;
+      s.openaiTestResult = { ok: false, msg: resEl.textContent };
+      renderCost();
+    }
+  }
+
   function saveSettings() {
     const s = draft.sheet;
     if (!s) { closeSettings(); return; }
     state.settings.responseMode = s.mode;
     state.settings.model = s.model;
     state.settings.showCost = s.showCost;
+    state.settings.openaiModel = Object.prototype.hasOwnProperty.call(OPENAI_MODELS, s.openaiModel)
+      ? s.openaiModel : OPENAI_DEFAULT_MODEL;
     state.settings.imageModel = Object.prototype.hasOwnProperty.call(IMAGE_MODELS, s.imageModel)
       ? s.imageModel : 'gemini-nano-banana-2.1';
     const spec = IMAGE_MODELS[state.settings.imageModel] || {};
@@ -3201,6 +3585,8 @@ input,textarea,select{font-family:inherit;color:inherit}
     });
     const keyEl = $('#setApiKey');
     if (keyEl && keyEl.value.trim()) setKey(keyEl.value.trim());
+    const oaKeyEl = $('#setOpenaiKey');
+    if (oaKeyEl && oaKeyEl.value.trim()) setOpenaiKey(oaKeyEl.value.trim());
     saveNow();
     closeSettings();
     renderAll();
@@ -3430,13 +3816,17 @@ input,textarea,select{font-family:inherit;color:inherit}
     storeOK = probeStore();
     loadState();
     loadKey();
+    loadOpenaiKey();
     renderAll();
     bind();
     renderStoreBadge();
     if (!storeOK) {
       setTimeout(() => toast('⚠️ 이 브라우저는 자동 저장이 막혀 있습니다. 설정 → JSON 백업으로 보관하세요.'), 1400);
-    } else if (ai.enabled) {
-      setTimeout(() => toast('🤖 AI 준비됨 (' + state.settings.model + ') · 절약 모드로 동작합니다'), 700);
+    } else if (ai.enabled || ai.openaiEnabled) {
+      const parts = [];
+      if (ai.enabled) parts.push(state.settings.model);
+      if (ai.openaiEnabled) parts.push('지피티 ' + normalizeOpenAIModel(state.settings.openaiModel));
+      setTimeout(() => toast('🤖 AI 준비됨 (' + parts.join(' · ') + ')'), 700);
     } else {
       setTimeout(() => toast('👑 스마트 모드로 시작합니다 · 설정에서 AI 키를 넣으면 실제 AI로 답합니다'), 900);
     }
