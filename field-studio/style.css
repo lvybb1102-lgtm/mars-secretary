@@ -42,8 +42,11 @@ h2{font-size:15px;margin:0 0 8px;letter-spacing:-.01em}
 
 /* buttons */
 .btn{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;border-radius:14px;padding:14px;
+  white-space:nowrap;
   font-size:15.5px;font-weight:800;letter-spacing:-.01em;background:linear-gradient(180deg,#17b47c,#0f7a5a);color:#fff;
   box-shadow:0 4px 0 #0a5a42,0 8px 16px rgba(15,122,90,.18);transition:transform .05s}
+.row .btn{flex:0 0 auto}
+.row .tiny{flex:1;min-width:0}
 .btn:active{transform:translateY(2px);box-shadow:0 2px 0 #0a5a42}
 .btn[disabled]{opacity:.55;box-shadow:none;background:#b9c9c3;color:#fff}
 .btn.ghost{background:#fff;color:#0b6b4f;border:1.5px solid #bfe0d2;box-shadow:none;font-weight:700}
