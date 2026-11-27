@@ -239,8 +239,8 @@
         '<span class="num">' + (i + 1) + '</span>' +
         '<img alt="" src="' + p.disp + '">' +
         (p.dateText ? '<span class="stamp">' + p.dateText + '</span>' : '') +
-        '<span class="acts"><button data-act="mosaic" data-id="' + p.id + '">가리기</button>' +
-        '<button data-act="del" data-id="' + p.id + '">✕</button></span>';
+        '<span class="acts"><button data-act="mosaic" data-id="' + p.id + '" title="모자이크" aria-label="모자이크">▨</button>' +
+        '<button data-act="del" data-id="' + p.id + '" title="삭제" aria-label="삭제">✕</button></span>';
       box.appendChild(d);
     });
     const add = document.createElement('button');
@@ -252,8 +252,8 @@
     $('#photoMeta').textContent = S.photos.length + '/10장';
     const dated = S.photos.filter((p) => p.dateKey).length;
     $('#photoHint').textContent = S.photos.length
-      ? (dated ? dated + '장은 촬영 시각으로 정렬 · ' : '') + 'AI용 800px 별도 저장'
-      : '촬영 시각이 있으면 순서대로 정렬합니다 · AI용 800px 별도 저장';
+      ? '사진을 눌러 얼굴·번호 가리기 · ' + (dated ? dated + '장 촬영 시각 정렬 · ' : '') + 'AI용 800px 별도'
+      : '촬영 시각이 있으면 순서대로 정렬합니다 · 사진을 눌러 모자이크';
   }
 
   /* ───────────────────────── 모자이크 편집기 ───────────────────────── */
@@ -1048,11 +1048,19 @@
     });
     $('#thumbs').addEventListener('click', (e) => {
       const b = e.target.closest('button[data-act]');
-      if (!b) return;
-      if (b.dataset.act === 'mosaic') openMosaic(b.dataset.id);
-      if (b.dataset.act === 'del') {
-        S.photos = S.photos.filter((p) => p.id !== b.dataset.id);
-        paintThumbs();
+      if (b) {
+        if (b.dataset.act === 'mosaic') openMosaic(b.dataset.id);
+        if (b.dataset.act === 'del') {
+          S.photos = S.photos.filter((p) => p.id !== b.dataset.id);
+          paintThumbs();
+        }
+        return;
+      }
+      const t = e.target.closest('.thumb');
+      if (t) {
+        const img = t.querySelector('img');
+        const p = S.photos.find((x) => x.disp === (img && img.getAttribute('src')));
+        if (p) openMosaic(p.id);
       }
     });
     $('#memo').addEventListener('input', (e) => { S.memo = e.target.value; });
