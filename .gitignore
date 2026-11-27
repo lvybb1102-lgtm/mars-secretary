@@ -8,3 +8,4 @@ verify_live_v5.py
 verify_v5_compat.py
 build_mobile.py
 verify_v6_map.py
+verify_v6_extra.py
