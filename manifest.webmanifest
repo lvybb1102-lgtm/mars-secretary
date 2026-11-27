@@ -1,0 +1,35 @@
+{
+  "name": "마르스 비서실",
+  "short_name": "비서실",
+  "description": "마르스 님 전용 AI 비서실 — 스마트폰 브라우저에서 단독 실행되는 단일 HTML 앱",
+  "lang": "ko",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "id": "/mars-secretary/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F6EFE4",
+  "theme_color": "#F7F3EB",
+  "categories": ["productivity", "business"],
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

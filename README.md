@@ -1,0 +1,19 @@
+# 마르스 비서실 (모바일)
+
+스마트폰 브라우저에서 단독으로 실행되는 「마르스 비서실」 웹앱입니다.
+
+- 주소: https://lvybb1102-lgtm.github.io/mars-secretary/
+- 안드로이드 크롬: 주소를 연 뒤 오른쪽 위 ⋮ → **홈 화면에 추가**(또는 설치) → 앱처럼 실행
+- 모든 대화·작업·메모는 **각 기기 브라우저의 localStorage**에만 저장됩니다. 서버로 전송되지 않습니다.
+- AI 응답을 쓰려면 앱 → 설정(⚙️)에서 본인의 Google AI Studio 키를 넣습니다. 키는 그 기기 브라우저에만 저장되며 이 저장소에는 들어 있지 않습니다.
+
+## 파일
+
+| 파일 | 설명 |
+|---|---|
+| `index.html` | 앱 전체(HTML·CSS·JS 단일 파일) |
+| `manifest.webmanifest` | 홈 화면 아이콘·앱 이름·standalone 설정 |
+| `sw.js` | 오프라인 백업용 서비스 워커(네트워크 우선) |
+| `icon-192.png` · `icon-512.png` · `icon-maskable-512.png` · `apple-touch-icon.png` | 왕관 아이콘 |
+
+수정 후 `main`에 푸시하면 1분 안팎으로 반영됩니다.
