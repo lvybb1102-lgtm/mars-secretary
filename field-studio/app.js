@@ -761,7 +761,7 @@
       contents: [{ role: 'user', parts }],
       systemInstruction: { parts: [{ text: systemFor(S.brand, S.mode) }] },
       generationConfig: {
-        temperature: (S.mode && S.mode !== 'field') ? 0.8 : 1.0,
+        temperature: (S.mode && S.mode !== 'field') ? 0.6 : 1.0,
         maxOutputTokens: maxTokens || 8192,
         thinkingConfig: { thinkingBudget: 0 }
       }
