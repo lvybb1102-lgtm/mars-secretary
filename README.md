@@ -20,7 +20,13 @@
 |---|---|
 | `index.html` | 앱 전체(HTML·CSS·JS 단일 파일) |
 | `manifest.webmanifest` | 홈 화면 아이콘·앱 이름·standalone 설정 |
-| `sw.js` | 오프라인 백업용 서비스 워커(네트워크 우선) |
+| `sw.js` | 오프라인 백업용 서비스 워커(네트워크 우선) · 현재 캐시 `mars-secretary-v3` |
 | `icon-192.png` · `icon-512.png` · `icon-maskable-512.png` · `apple-touch-icon.png` | 왕관 아이콘 |
+
+## 사진·파일 첨부와 이미지 생성 (2026-11-27)
+
+- **📎 첨부**: 사진은 긴 변 1,280px JPEG로 자동 축소해 `inlineData`로 보내고, PDF는 8MB 이하, 문서(.txt .md .csv .json .log .html)는 텍스트로 프롬프트에 붙입니다. 채팅 저장에는 썸네일만 남겨 localStorage를 보호합니다.
+- **🎨 이미지 생성**: Nano Banana 계열 모델로 생성·저장(다운로드). 2026-11-27 실측 기준 장당 약 55원(2.1 1K)~201원(Pro 1K). **선불 결제된 API 키에서만 동작**합니다.
+- 실제 모델·실측 단가·검증 결과는 `downloads/2026-11-27_마르스_비서실_모바일_사용법.md` 10~11장 참고.
 
 수정 후 `main`에 푸시하면 1분 안팎으로 반영됩니다.

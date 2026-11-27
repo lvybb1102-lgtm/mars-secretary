@@ -1,5 +1,5 @@
 /* 마르스 비서실 — 오프라인 백업용 서비스 워커 (네트워크 우선, 실패 시 캐시) */
-const CACHE = 'mars-secretary-v2';
+const CACHE = 'mars-secretary-v3';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {

@@ -363,6 +363,65 @@ input,textarea,select{font-family:inherit;color:inherit}
 .memo-del{border:0;background:none;color:#C2A891;font-size:13px;padding:3px 5px}
 .memo-del:active{color:#B04A32}
 
+/* ───────── 첨부 · 이미지 생성 ───────── */
+.attach-btn{
+  width:44px;height:44px;flex:0 0 auto;border-radius:14px;border:1px solid var(--line-2);
+  background:#FFFCF4;font-size:18px;line-height:1;display:grid;place-items:center;
+  transition:transform .12s,background .15s,border-color .15s;touch-action:manipulation;
+}
+.attach-btn:active{background:#FFF2DC;transform:scale(.95)}
+.attach-btn.on{
+  border-color:#CB9F72;background:linear-gradient(180deg,#8D5C2C,#6A3F1C);color:#fff;
+  box-shadow:0 5px 12px rgba(107,66,28,.26);
+}
+.gen-btn{font-size:17px}
+.gen-row{padding-bottom:7px}
+.gen-hint{
+  flex:0 0 auto;font-size:10px;font-weight:700;color:#96785B;background:#FFF6E6;
+  border:1px solid #F0E1C8;border-radius:999px;padding:4px 8px;white-space:nowrap;
+}
+.chip.ratio{font-size:10.5px;padding:5px 9px;min-height:30px}
+
+.attach-chip{
+  display:flex;align-items:center;gap:6px;flex:0 0 auto;max-width:200px;
+  padding:4px 6px 4px 4px;border:1px solid var(--line-2);border-radius:12px;background:#fff;
+  box-shadow:0 1px 0 rgba(255,255,255,.7) inset;
+}
+.attach-chip .th{width:34px;height:34px;border-radius:8px;object-fit:cover;flex:0 0 auto;
+  background:#F4EADA;display:grid;place-items:center;font-size:15px;overflow:hidden}
+.attach-chip .th img{width:100%;height:100%;object-fit:cover;display:block}
+.attach-chip .nm{min-width:0;line-height:1.25}
+.attach-chip .nm b{display:block;font-size:10.5px;font-weight:800;color:#5E4835;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:112px}
+.attach-chip .nm span{display:block;font-size:9px;color:#A89480;font-weight:700}
+.attach-chip .x{border:0;background:#F7EFE2;color:#96744A;border-radius:50%;
+  width:19px;height:19px;min-width:19px;font-size:10px;line-height:1;display:grid;place-items:center;flex:0 0 auto}
+.attach-chip .x:active{background:#F3DFC4}
+
+.atts{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:5px}
+.m-user .atts{justify-content:flex-end}
+.atts .att-th{width:74px;height:74px;object-fit:cover;border-radius:10px;
+  border:1px solid var(--peach-line);background:#fff;display:block}
+.att-doc{display:inline-flex;align-items:center;gap:4px;max-width:100%;font-size:10.5px;font-weight:800;
+  color:#5E4835;background:#FFF6E6;border:1px solid #F0E1C8;border-radius:9px;padding:5px 8px}
+.att-doc i{font-style:normal;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px}
+
+.gen-wrap{margin-top:2px}
+.gen-img{display:block;width:100%;max-width:270px;height:auto;border-radius:12px;
+  border:1px solid #E7D8C2;background:#fff;cursor:zoom-in}
+.img-tools{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}
+.img-tools .btn{padding:5px 9px;font-size:10.5px;border-radius:9px}
+.img-meta{font-size:9.5px;color:#A89480;font-weight:700;margin-top:5px;line-height:1.45;word-break:break-all}
+
+.lightbox{position:fixed;inset:0;z-index:90;background:rgba(32,20,10,.88);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px}
+.lightbox img{max-width:100%;max-height:74vh;border-radius:14px;box-shadow:0 24px 60px rgba(0,0,0,.5);background:#fff}
+.lb-close{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));right:16px;
+  width:40px;height:40px;border:0;border-radius:50%;background:rgba(255,255,255,.18);color:#fff;font-size:17px}
+.lb-tools{display:flex;gap:8px}
+.lb-tools .btn{background:rgba(255,255,255,.94);border-color:transparent}
+.lb-cap{color:#F4EADB;font-size:11px;font-weight:700;max-width:92vw;text-align:center;line-height:1.5;word-break:break-word}
+
 /* ───────── 설정 시트 ───────── */
 .overlay{
   position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;
@@ -425,6 +484,12 @@ input,textarea,select{font-family:inherit;color:inherit}
 .seg{display:flex;border:1px solid var(--line-2);border-radius:11px;overflow:hidden;background:#fff}
 .seg button{flex:1;border:0;background:#fff;padding:10px 8px;font-size:12px;font-weight:700;color:#7B6653}
 .seg button.on{background:linear-gradient(180deg,#8D5C2C,#6A3F1C);color:#fff}
+.price-tbl{width:100%;border-collapse:collapse;font-size:10.5px;margin-top:6px;background:#fff;border-radius:10px;overflow:hidden}
+.price-tbl th,.price-tbl td{border:1px solid #F0E4D2;padding:5px 6px;text-align:center;color:#6B5644}
+.price-tbl th{background:#FFF6E6;font-weight:800;color:#6B4A28;font-size:10px}
+.price-tbl td.l{text-align:left;font-weight:700;white-space:nowrap}
+.price-tbl tr.on td{background:#FFF9EC}
+.price-tbl td.pick{color:#2E8B57;font-weight:800}
 .box{background:#FFF9EE;border:1px solid #F0E1C8;border-radius:12px;padding:11px 12px}
 .usage-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:8px}
 .usage-cell{background:#fff;border:1px solid #F0E4D2;border-radius:9px;padding:7px 9px}
@@ -459,6 +524,8 @@ input,textarea,select{font-family:inherit;color:inherit}
   .memo-add textarea,.memo-add-row input,.searchbar input,.newtask input,.field input,.field select,.field textarea{font-size:16px}
 }
 @media (max-width:400px){
+  .attach-btn{width:42px;height:42px}
+  .inputbar{gap:6px}
   .brand h1{font-size:15.5px}
   .crest{width:38px;height:38px;font-size:18px;border-radius:12px}
   .hdr{padding-left:12px;padding-right:12px;gap:6px}
@@ -515,13 +582,24 @@ input,textarea,select{font-family:inherit;color:inherit}
       </div>
       <div class="chat" id="chatScroll"></div>
       <div class="composer">
+        <div class="chip-row attach-row hide" id="attachRow">
+          <span class="lbl">첨부</span>
+          <div class="chips" id="attachChips"></div>
+        </div>
         <div class="chip-row">
           <span class="lbl">발신</span>
           <div class="chips" id="senderChips"></div>
         </div>
         <div class="chip-row mentions" id="mentionChips"></div>
+        <div class="chip-row gen-row hide" id="genRow">
+          <span class="lbl">그림</span>
+          <div class="chips" id="ratioChips"></div>
+          <span class="gen-hint" id="genHint">1:1 · 1K · 약 55원</span>
+        </div>
         <div class="inputbar">
+          <button class="attach-btn" id="btnAttach" aria-label="사진·파일 첨부" title="사진·PDF·문서 첨부">📎</button>
           <textarea id="input" rows="1" placeholder="대장님, 지시를 내려주세요 (@all 또는 @니케)" enterkeyhint="send"></textarea>
+          <button class="attach-btn gen-btn" id="btnImgMode" aria-label="이미지 생성 모드" title="이미지 생성 (Nano Banana)">🎨</button>
           <button class="send" id="btnSend" aria-label="발신">➤</button>
         </div>
       </div>
@@ -600,8 +678,19 @@ input,textarea,select{font-family:inherit;color:inherit}
   </div>
 </div>
 
+<div class="lightbox hide" id="lightbox" role="dialog" aria-modal="true" aria-label="이미지 크게 보기">
+  <button class="lb-close" id="btnLbClose" aria-label="닫기">✕</button>
+  <img id="lbImg" alt="생성 이미지">
+  <div class="lb-cap" id="lbCap"></div>
+  <div class="lb-tools">
+    <button class="btn" id="btnLbSave">💾 저장</button>
+    <button class="btn" id="btnLbClose2">닫기</button>
+  </div>
+</div>
+
 <input type="file" id="restoreFile" class="hide" accept=".json,application/json">
 <input type="file" id="guideFile" class="hide" accept=".md,.txt,.json,text/markdown,text/plain,application/json">
+<input type="file" id="attachFile" class="hide" multiple accept="image/*,application/pdf,.txt,.md,.markdown,.csv,.json,.log,.html,.htm,text/plain,text/markdown,text/csv,application/json">
 <div class="toast-wrap" id="toastWrap"></div>
 
 <script>
@@ -742,7 +831,7 @@ input,textarea,select{font-family:inherit;color:inherit}
   function defaultState() {
     const t = nowISO();
     return {
-      version: 3,
+      version: 4,
       profile: { officeName: '마르스 비서실', ownerName: '마르스', ownerTitle: '대장님', ownerEmoji: '👑' },
       assistants: DEFAULT_ASSISTANTS(),
       rooms: [
@@ -772,7 +861,10 @@ input,textarea,select{font-family:inherit;color:inherit}
       settings: {
         responseMode: 'save',          // save = 스마트 절약 모드 / always = 항상 AI
         model: 'gemini-3.5-flash-lite',
-        showCost: true
+        showCost: true,
+        imageModel: 'gemini-nano-banana-2.1',   // 🎨 이미지 생성 기본 모델
+        imageSize: '1K',
+        imageAspect: '1:1'
       },
       ui: { senderId: 'owner', tab: 'chat', taskFilter: 'all' },
       meta: { createdAt: t, updatedAt: t, welcomed: false }
@@ -785,6 +877,8 @@ input,textarea,select{font-family:inherit;color:inherit}
   let busy = false;
   let saveTimer = null;
   const draft = {};
+  /* 첨부·이미지 생성 모드 상태(저장하지 않는 임시값) */
+  const attach = { items: [], mode: false, ratio: '1:1' };
 
   function migrate(s) {
     const d = defaultState();
@@ -796,6 +890,11 @@ input,textarea,select{font-family:inherit;color:inherit}
     if (!['gemini-3.5-flash-lite', 'gemini-2.5-flash-lite', 'gemini-3.5-flash'].includes(out.settings.model)) {
       out.settings.model = 'gemini-3.5-flash-lite';
     }
+    if (!Object.prototype.hasOwnProperty.call(IMAGE_MODELS, out.settings.imageModel)) {
+      out.settings.imageModel = 'gemini-nano-banana-2.1';
+    }
+    if (!['1K', '2K', '4K'].includes(out.settings.imageSize)) out.settings.imageSize = '1K';
+    if (IMAGE_ASPECTS.indexOf(out.settings.imageAspect) < 0) out.settings.imageAspect = '1:1';
     out.ui = Object.assign({}, d.ui, s.ui || {});
     out.meta = Object.assign({}, d.meta, s.meta || {});
     if (!Array.isArray(out.assistants) || !out.assistants.length) out.assistants = d.assistants;
@@ -1051,13 +1150,39 @@ input,textarea,select{font-family:inherit;color:inherit}
     $('#roomLine').textContent = (room.emoji || '') + ' ' + room.name + ' · ON ' + (state.assistants.length + 1) + '명';
   }
 
+  /* 첨부 썸네일 · 파일 이름 줄 */
+  function attsHTML(atts) {
+    if (!atts || !atts.length) return '';
+    const html = atts.map((x) => {
+      if (x.th) return '<img class="att-th" src="' + esc(x.th) + '" alt="' + esc(x.name || '사진') + '">';
+      return '<span class="att-doc">' + (x.kind === 'pdf' ? '📄' : '📝') + '<i>' + esc(x.name || '') + '</i></span>';
+    }).join('');
+    return '<div class="atts">' + html + '</div>';
+  }
+
+  /* 생성 이미지 + 저장·확대·재생성 */
+  function imgHTML(m) {
+    if (!m.img || !m.img.t) return '';
+    const g = m.gen || {};
+    return '<div class="gen-wrap">' +
+      '<img class="gen-img" src="' + esc(m.img.t) + '" alt="생성 이미지" data-img-open="' + esc(m.id) + '">' +
+      '<div class="img-tools">' +
+      '<button class="btn mini" data-img-save="' + esc(m.id) + '">💾 저장</button>' +
+      '<button class="btn mini ghost" data-img-open="' + esc(m.id) + '">🔍 크게</button>' +
+      (m.img.prompt ? '<button class="btn mini ghost" data-img-retry="' + esc(m.id) + '">🔁 다시</button>' : '') +
+      '</div>' +
+      '<div class="img-meta">' + esc(g.model || '이미지') +
+      (m.img.aspect ? ' · ' + esc(m.img.aspect) + ' ' + esc(m.img.size || '') : '') +
+      (g.krw != null ? ' · 약 ' + esc(wonText(g.krw)) : '') + '</div></div>';
+  }
+
   function msgHTML(m) {
     if (m.type === 'system') {
       return '<div class="m-sys">' + esc(m.text) + '</div>';
     }
     if (m.type === 'user' || m.senderId === 'owner') {
       return '<div class="m-user">' +
-        '<div style="min-width:0"><div class="bubble">' + esc(m.text) + '</div>' +
+        '<div style="min-width:0"><div class="bubble">' + attsHTML(m.atts) + esc(m.text) + '</div>' +
         '<div class="m-time">' + esc(timeLabel(m.at)) + '</div></div>' +
         '<div class="u-avatar">' + esc(state.profile.ownerEmoji || '👑') + '</div></div>';
     }
@@ -1072,7 +1197,7 @@ input,textarea,select{font-family:inherit;color:inherit}
       '<span class="a-name">' + esc(a.name) + ' 비서</span>' +
       '<span class="a-title">' + esc(a.title) + '</span>' +
       '<span class="a-time">' + esc(timeLabel(m.at)) + '</span>' + tag +
-      '</div><div class="bubble">' + esc(m.text) + '</div></div></div>';
+      '</div><div class="bubble">' + esc(m.text) + imgHTML(m) + '</div></div></div>';
   }
 
   function renderChat(scrollToEnd) {
@@ -1480,6 +1605,16 @@ input,textarea,select{font-family:inherit;color:inherit}
     push('user', o.prompt || '안녕하세요');
     while (contents.length && contents[0].role === 'model') contents.shift();
     if (!contents.length) contents.push({ role: 'user', parts: [{ text: '안녕하세요' }] });
+    /* 첨부(사진·PDF)는 마지막 사용자 턴의 inlineData 파트로 붙인다 */
+    const atts = Array.isArray(o.attach) ? o.attach : [];
+    if (atts.length) {
+      const last = contents[contents.length - 1];
+      if (last && last.role === 'user') {
+        atts.forEach((a) => {
+          if (a && a.data && a.mime) last.parts.push({ inlineData: { mimeType: a.mime, data: a.data } });
+        });
+      }
+    }
 
     const gen = { temperature: o.json ? 0.7 : 0.6, maxOutputTokens: o.json ? 1600 : 512, topP: 0.95 };
     if (o.json) {
@@ -1577,13 +1712,14 @@ input,textarea,select{font-family:inherit;color:inherit}
     return null;
   }
 
-  async function aiReplyBatch(targets, text) {
+  async function aiReplyBatch(targets, text, files) {
     const res = await callGemini({
       system: buildSystem(targets),
       history: historyForAI(),
-      prompt: '대장님 지시: ' + text.replace(/@[^\s@,]+/g, '').trim(),
+      prompt: '대장님 지시: ' + text.replace(/@[^\s@,]+/g, '').trim() + attachPromptNote(files) + textAttachmentBlock(files),
       model: state.settings.model,
-      json: true
+      json: true,
+      attach: attachmentParts(files)
     });
     const items = Array.isArray(res.items) ? res.items : parseItems(res.text);
     const out = {};
@@ -1623,11 +1759,13 @@ input,textarea,select{font-family:inherit;color:inherit}
   /* ───────── 메시지·작업 ───────── */
   function addMessage(m) {
     const list = state.messages[state.activeRoom];
-    list.push(Object.assign({ id: uid('m'), at: nowISO() }, m));
+    const msg = Object.assign({ id: uid('m'), at: nowISO() }, m);
+    list.push(msg);
     if (list.length > 400) list.splice(0, list.length - 400);
+    return msg;
   }
 
-  function showTyping(a) {
+  function showTyping(a, label) {
     const wrap = $('#chatScroll');
     const el = document.createElement('div');
     el.className = 'm-ai';
@@ -1635,7 +1773,7 @@ input,textarea,select{font-family:inherit;color:inherit}
     el.style.setProperty('--tint', a.tint);
     el.innerHTML = '<div class="a-avatar">' + esc(a.emoji) + '</div>' +
       '<div class="a-body"><div class="a-head"><span class="a-name">' + esc(a.name) + ' 비서</span>' +
-      '<span class="a-title">' + esc(a.title) + '</span><span class="a-time">작성 중…</span></div>' +
+      '<span class="a-title">' + esc(a.title) + '</span><span class="a-time">' + esc(label || '작성 중…') + '</span></div>' +
       '<div class="bubble" style="padding:0"><div class="typing"><i></i><i></i><i></i></div></div></div>';
     wrap.appendChild(el);
     wrap.scrollTop = wrap.scrollHeight;
@@ -1689,15 +1827,33 @@ input,textarea,select{font-family:inherit;color:inherit}
   async function send() {
     if (busy) return;
     const input = $('#input');
-    const text = input.value.trim();
-    if (!text) return;
+    let text = input.value.trim();
+    const files = attach.items.slice();
+    const imgMode = !!attach.mode;
+    if (!text && !files.length) return;
     const senderId = state.ui.senderId || 'owner';
+
+    /* 첨부·이미지 생성은 Gemini 키가 있어야 실제로 읽고 그립니다 */
+    if ((files.length || imgMode) && senderId === 'owner' && !ai.enabled) {
+      toast('⚙️ 사진·파일 읽기와 이미지 생성은 AI 키가 필요합니다. 설정에서 Google AI Studio 키를 넣어 주세요.');
+      openSettings();
+      return;
+    }
+    if (!text) {
+      text = files.some((x) => x.kind !== 'image') ? '첨부한 파일을 읽고 핵심만 정리해 줘.' : '첨부한 사진을 보고 알려 줘.';
+    }
+
     busy = true;
     $('#btnSend').disabled = true;
 
-    addMessage({ type: senderId === 'owner' ? 'user' : 'assistant', senderId, text });
+    addMessage({
+      type: senderId === 'owner' ? 'user' : 'assistant', senderId, text,
+      atts: files.length ? files.map(attMetaOf) : undefined
+    });
     input.value = '';
     input.style.height = 'auto';
+    if (btnAttachEl()) btnAttachEl().classList.toggle('on', false);
+    clearAttach();
     save();
     renderChatOnly(true);
 
@@ -1710,6 +1866,14 @@ input,textarea,select{font-family:inherit;color:inherit}
       return;
     }
 
+    /* 🎨 이미지 생성 — 모드 버튼 또는 명백한 이미지 요청 */
+    if (imgMode || (!files.some((x) => x.kind !== 'image') && looksImageGen(text))) {
+      await runImageGen(text, files, imageAuthor(text));
+      busy = false; $('#btnSend').disabled = false;
+      save(); renderAll();
+      return;
+    }
+
     const targets = parseTargets(text);
     if (isChitChat(text)) {
       const a = targets[0] || state.assistants[0];
@@ -1719,14 +1883,14 @@ input,textarea,select{font-family:inherit;color:inherit}
       return;
     }
 
-    const useAI = shouldUseAI(text);
+    const useAI = files.length ? ai.enabled : shouldUseAI(text);
     if (useAI) {
       draft.typingId = targets[0].id;
       showTyping(targets[0]);
       renderStaff();
       try {
         const t0 = Date.now();
-        const res = await aiReplyBatch(targets, text);
+        const res = await aiReplyBatch(targets, text, files);
         const elapsed = Date.now() - t0;
         hideTyping();
         if (res.fallbackLocal) {
@@ -1878,7 +2042,7 @@ input,textarea,select{font-family:inherit;color:inherit}
       app: 'mars-secretary-mobile',
       version: 3,
       exportedAt: nowISO(),
-      note: '대화·작업·메모와 비서실 공통 지침이 함께 담깁니다. Google API 키는 보안을 위해 담기지 않으니 새 기기에서는 설정에서 다시 입력하세요.',
+      note: '대화·작업·메모와 비서실 공통 지침이 함께 담깁니다. 생성 이미지는 미리보기만 담기고(원본 제외), Google API 키는 보안을 위해 담기지 않으니 새 기기에서는 설정에서 다시 입력하세요.',
       state: state
     };
     downloadFile('마르스_비서실_백업_' + today() + '.json', JSON.stringify(pack, null, 2), 'application/json');
@@ -1895,7 +2059,11 @@ input,textarea,select{font-family:inherit;color:inherit}
         const who = m.senderId === 'owner'
           ? (state.profile.ownerName || '마르스') + ' (' + (state.profile.ownerTitle || '대장님') + ')'
           : ((assistantById(m.senderId) || {}).name || '비서') + ' 비서';
-        lines.push('**' + who + '** · ' + dayLabel(m.at), '', m.text, '');
+        const extra = [];
+        if (m.atts && m.atts.length) extra.push('📎 ' + m.atts.map((x) => x.name).join(', '));
+        if (m.img) extra.push('🎨 이미지 1장' + (m.gen && m.gen.model ? ' · ' + m.gen.model : ''));
+        lines.push('**' + who + '** · ' + dayLabel(m.at), '',
+          (extra.length ? '[' + extra.join(' / ') + '] ' : '') + m.text, '');
       });
     });
     downloadFile('마르스_비서실_대화_' + today() + '.md', lines.join('\n'), 'text/markdown');
@@ -1925,12 +2093,688 @@ input,textarea,select{font-family:inherit;color:inherit}
     reader.readAsText(file, 'utf-8');
   }
 
+  /* ═══════════════ 첨부(사진·PDF·문서) ═══════════════ */
+  const MAX_PDF_BYTES = 8 * 1024 * 1024;      // PDF 1건 8MB 이하(Gemini 인라인 한도 고려)
+  const MAX_FILE_ITEMS = 6;                    // 한 번에 최대 6건
+  const MAX_REF_IMAGES = 4;                    // 이미지 참조 최대 4장
+  const IMG_MAX_SIDE = 1280;                   // 폰 사진 → 긴 변 1280px로 축소
+  const IMG_QUALITY = 0.82;
+  const THUMB_SIDE = 320;                      // 대화에 남기는 썸네일(용량 절약)
+  const TEXT_MAX_DOC = 40000;                  // 문서 1건 프롬프트 최대 글자
+  const TEXT_MAX_TOTAL = 80000;                // 문서 합계 상한
+
+  const ATT_IMG_RE = /^image\//i;
+  const ATT_TEXT_RE = /\.(txt|md|markdown|csv|tsv|json|log|html?|xml|ya?ml|ini|conf)$/i;
+
+  function fileKindOf(f) {
+    const name = String((f && f.name) || '');
+    const type = String((f && f.type) || '');
+    if (ATT_IMG_RE.test(type) || /\.(jpe?g|png|gif|webp|heic|heif|bmp)$/i.test(name)) return 'image';
+    if (type === 'application/pdf' || /\.pdf$/i.test(name)) return 'pdf';
+    if (ATT_TEXT_RE.test(name) || /^text\//i.test(type)) return 'text';
+    return '';
+  }
+
+  function bytesText(n) {
+    const b = Number(n) || 0;
+    if (b >= 1024 * 1024) return (b / 1024 / 1024).toFixed(1) + 'MB';
+    if (b >= 1024) return Math.round(b / 1024) + 'KB';
+    return b + 'B';
+  }
+
+  function sizeText(x) {
+    if (x.kind === 'text') return '문서 · ' + (x.chars || 0).toLocaleString('ko-KR') + '자';
+    if (x.kind === 'image') return (x.w && x.h ? x.w + '×' + x.h + ' · ' : '사진 · ') + bytesText(x.size);
+    return 'PDF · ' + bytesText(x.size);
+  }
+
+  function readAsDataURL(file) {
+    return new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(String(r.result || ''));
+      r.onerror = () => rej(new Error('파일을 읽지 못했습니다.'));
+      r.readAsDataURL(file);
+    });
+  }
+  function readAsText(file) {
+    return new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(String(r.result || ''));
+      r.onerror = () => rej(new Error('파일을 읽지 못했습니다.'));
+      r.readAsText(file, 'utf-8');
+    });
+  }
+  function loadImage(url) {
+    return new Promise((res, rej) => {
+      const img = new Image();
+      img.onload = () => res(img);
+      img.onerror = () => rej(new Error('사진을 해석하지 못했습니다.'));
+      img.src = url;
+    });
+  }
+
+  /* 폰 사진은 크다 → 캔버스로 긴 변 1280px JPEG로 줄인다(전송 용량·토큰·시간 절약) */
+  async function shrinkImage(file, maxSide) {
+    const full = await readAsDataURL(file);
+    const img = await loadImage(full);
+    let w = img.naturalWidth || img.width || 1;
+    let h = img.naturalHeight || img.height || 1;
+    const side = maxSide || IMG_MAX_SIDE;
+    const scale = Math.min(1, side / Math.max(w, h));
+    w = Math.max(1, Math.round(w * scale));
+    h = Math.max(1, Math.round(h * scale));
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(img, 0, 0, w, h);
+    const dataURL = c.toDataURL('image/jpeg', IMG_QUALITY);
+    return { mime: 'image/jpeg', data: dataURL.split(',')[1] || '', dataURL, w, h };
+  }
+
+  /* 대화에 남길 작은 썸네일(저장 용량 보호) */
+  async function makeThumb(src) {
+    try {
+      const img = await loadImage(src);
+      const w0 = img.naturalWidth || img.width || 1;
+      const h0 = img.naturalHeight || img.height || 1;
+      const scale = Math.min(1, THUMB_SIDE / Math.max(w0, h0));
+      const w = Math.max(1, Math.round(w0 * scale));
+      const h = Math.max(1, Math.round(h0 * scale));
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+      return { t: c.toDataURL('image/jpeg', 0.72), w: w0, h: h0 };
+    } catch (e) {
+      return { t: src, w: 0, h: 0 };
+    }
+  }
+
+  async function addFiles(list) {
+    const files = Array.prototype.slice.call(list || []);
+    if (!files.length) return;
+    for (const f of files) {
+      if (attach.items.length >= MAX_FILE_ITEMS) { toast('첨부는 한 번에 ' + MAX_FILE_ITEMS + '건까지입니다.'); break; }
+      const kind = fileKindOf(f);
+      if (!kind) { toast('⚠️ ' + (f.name || '이 파일') + ' — 사진·PDF·문서(.txt .md .csv .json .log .html)만 보낼 수 있습니다.'); continue; }
+      try {
+        if (kind === 'image') {
+          if (attach.items.filter((x) => x.kind === 'image').length >= MAX_REF_IMAGES) {
+            toast('사진은 한 번에 ' + MAX_REF_IMAGES + '장까지입니다.'); continue;
+          }
+          const r = await shrinkImage(f);
+          const th = await makeThumb(r.dataURL);
+          attach.items.push({
+            id: uid('f'), name: String(f.name || '사진') .slice(0, 60), mime: r.mime, kind: 'image',
+            size: f.size || 0, data: r.data, th: th.t, w: r.w, h: r.h
+          });
+        } else if (kind === 'pdf') {
+          if ((f.size || 0) > MAX_PDF_BYTES) {
+            toast('⚠️ PDF는 8MB 이하만 됩니다. (이 파일 ' + bytesText(f.size) + ') 설정 → JSON 백업처럼 나눠 보내 주세요.');
+            continue;
+          }
+          const full = await readAsDataURL(f);
+          attach.items.push({
+            id: uid('f'), name: String(f.name || 'PDF'), mime: 'application/pdf', kind: 'pdf',
+            size: f.size || 0, data: full.split(',')[1] || '', th: ''
+          });
+        } else {
+          const text = await readAsText(f);
+          const body = String(text || '').replace(/\u0000/g, '');
+          if (!body.trim()) { toast('⚠️ ' + (f.name || '문서') + '이 비어 있습니다.'); continue; }
+          attach.items.push({
+            id: uid('f'), name: String(f.name || '문서').slice(0, 60), mime: 'text/plain', kind: 'text',
+            size: f.size || 0, text: body, chars: body.length, th: ''
+          });
+        }
+      } catch (e) {
+        toast('⚠️ ' + (f.name || '파일') + ' — ' + (e.message || '읽지 못했습니다'));
+      }
+    }
+    renderAttach();
+    if (attach.items.length) toast('📎 ' + attach.items.length + '건 첨부 · 보내면 AI가 함께 읽습니다');
+  }
+
+  function renderAttach() {
+    const row = $('#attachRow'), wrap = $('#attachChips');
+    if (!row || !wrap) return;
+    row.classList.toggle('hide', !attach.items.length);
+    wrap.innerHTML = attach.items.map((x) =>
+      '<div class="attach-chip"><div class="th">' +
+      (x.th ? '<img src="' + esc(x.th) + '" alt="">' : (x.kind === 'pdf' ? '📄' : '📝')) + '</div>' +
+      '<div class="nm"><b>' + esc(x.name) + '</b><span>' + esc(sizeText(x)) + '</span></div>' +
+      '<button class="x" data-att-del="' + esc(x.id) + '" aria-label="첨부 삭제">✕</button></div>'
+    ).join('');
+    requestAnimationFrame(markOverflow);
+    setPlaceholder();
+  }
+
+  function removeAttach(id) {
+    attach.items = attach.items.filter((x) => x.id !== id);
+    renderAttach();
+  }
+  function clearAttach() {
+    attach.items = [];
+    renderAttach();
+    const el = $('#attachFile');
+    if (el) el.value = '';
+  }
+  function btnAttachEl() { return $('#btnAttach'); }
+
+  /* 대화에 남기는 정보만(원본 base64는 저장하지 않는다) */
+  function attMetaOf(x) {
+    return { name: x.name, kind: x.kind, mime: x.mime, size: x.size, th: x.th || '', w: x.w || 0, h: x.h || 0 };
+  }
+
+  /* AI 전송용 파트 */
+  function attachmentParts(files) {
+    return (files || []).filter((x) => x.data && (x.kind === 'image' || x.kind === 'pdf'))
+      .map((x) => ({ mime: x.mime, data: x.data }));
+  }
+  function attachPromptNote(files) {
+    const list = files || [];
+    if (!list.length) return '';
+    const n = { image: 0, pdf: 0, text: 0 };
+    list.forEach((x) => { n[x.kind] = (n[x.kind] || 0) + 1; });
+    const parts = [];
+    if (n.image) parts.push('사진 ' + n.image + '장');
+    if (n.pdf) parts.push('PDF ' + n.pdf + '건');
+    if (n.text) parts.push('문서 ' + n.text + '건');
+    return '\n\n[첨부] ' + parts.join(' · ') + '을 함께 보냈습니다. 첨부를 실제로 읽고 그 내용을 근거로 답하세요. 첨부에 없는 값은 지어내지 말고 "첨부에서 확인 안 됨"으로 남깁니다.';
+  }
+  function textAttachmentBlock(files) {
+    const docs = (files || []).filter((x) => x.kind === 'text' && x.text);
+    if (!docs.length) return '';
+    let used = 0;
+    const out = ['', '[첨부 문서 내용]'];
+    for (const d of docs) {
+      const room = TEXT_MAX_TOTAL - used;
+      if (room <= 200) { out.push('… (첨부 문서 합계 상한 ' + TEXT_MAX_TOTAL.toLocaleString('ko-KR') + '자 초과로 이하 생략)'); break; }
+      const body = String(d.text).slice(0, Math.min(TEXT_MAX_DOC, room));
+      out.push('--- ' + d.name + ' (' + body.length.toLocaleString('ko-KR') + '자' +
+        (body.length < String(d.text).length ? ' 중 앞부분' : '') + ') ---');
+      out.push(body);
+      out.push('');
+      used += body.length;
+    }
+    return out.join('\n');
+  }
+
+  /* ═══════════════ 이미지 생성 (Nano Banana) ═══════════════ */
+  /* 2026-11-27 models API + 실제 호출로 확인한 모델과 공식 단가(USD/장) */
+  const IMAGE_MODELS = {
+    'gemini-nano-banana-2.1': {
+      label: 'Nano Banana 2.1', sizes: ['1K', '2K', '4K'],
+      perImg: { '1K': 0.0336, '2K': 0.0504, '4K': 0.113 }, think: true,
+      note: '기본 추천 · 품질/가격 균형'
+    },
+    'gemini-3.1-flash-lite-image': {
+      label: 'Nano Banana 2 Lite', sizes: ['1K'],
+      perImg: { '1K': 0.0336 }, think: false,
+      note: '가장 빠름 · 1K 전용 · 편집 반복엔 약함'
+    },
+    'gemini-3.1-flash-image': {
+      label: 'Nano Banana 2', sizes: ['1K', '2K', '4K'],
+      perImg: { '1K': 0.067, '2K': 0.101, '4K': 0.151 }, think: false,
+      note: '글자·다중 참조에 강함'
+    },
+    'gemini-3-pro-image': {
+      label: 'Nano Banana Pro', sizes: ['1K', '2K', '4K'],
+      perImg: { '1K': 0.134, '2K': 0.134, '4K': 0.24 }, think: true,
+      note: '최고 품질 · 글자·레이아웃 정밀'
+    },
+    'gemini-2.5-flash-image': {
+      label: 'Nano Banana (구형)', sizes: ['1K'],
+      perImg: { '1K': 0.039 }, think: false,
+      note: '구형 · 2027-03-15 지원종료 예정'
+    }
+  };
+  const IMAGE_PRICING = {
+    'gemini-nano-banana-2.1': { in: 2, text: 7.5, img: 30 },
+    'gemini-3.1-flash-lite-image': { in: 0.5, text: 3, img: 30 },
+    'gemini-3.1-flash-image': { in: 0.5, text: 3, img: 60 },
+    'gemini-3-pro-image': { in: 2, text: 12, img: 120 },
+    'gemini-2.5-flash-image': { in: 0.3, text: 3, img: 30 }
+  };
+  const IMAGE_ASPECTS = ['1:1', '16:9', '9:16', '4:5'];
+  const IMAGE_FALLBACK = ['gemini-nano-banana-2.1', 'gemini-3.1-flash-image', 'gemini-2.5-flash-image'];
+  const IMG_INTENT = /(?:이미지|그림|사진|포스터|배너|썸네일|일러스트|로고|캐릭터)\s*(?:를|을|좀|하나|한\s*?장)?\s*(?:만들|생성|그려|그림|뽑아|제작|만들어)/;
+
+  /* 이전 세션 원본 이미지(다운로드용) — IndexedDB, 실패하면 메모리만 */
+  const IMG_DB = 'mars-secretary-img';
+  const imgFull = Object.create(null);
+  let idbOK = true;
+
+  function idbOpen() {
+    return new Promise((res, rej) => {
+      try {
+        const r = indexedDB.open(IMG_DB, 1);
+        r.onupgradeneeded = () => {
+          const db = r.result;
+          if (!db.objectStoreNames.contains('img')) db.createObjectStore('img');
+        };
+        r.onsuccess = () => res(r.result);
+        r.onerror = () => rej(r.error || new Error('IDB'));
+      } catch (e) { rej(e); }
+    });
+  }
+  async function idbPut(id, obj) {
+    if (!idbOK || typeof indexedDB === 'undefined') return false;
+    try {
+      const db = await idbOpen();
+      await new Promise((res, rej) => {
+        const tx = db.transaction('img', 'readwrite');
+        tx.objectStore('img').put(obj, id);
+        tx.oncomplete = () => res();
+        tx.onerror = () => rej(tx.error);
+      });
+      return true;
+    } catch (e) { idbOK = false; return false; }
+  }
+  async function idbGet(id) {
+    if (!idbOK || typeof indexedDB === 'undefined') return null;
+    try {
+      const db = await idbOpen();
+      return await new Promise((res, rej) => {
+        const tx = db.transaction('img', 'readonly');
+        const rq = tx.objectStore('img').get(id);
+        rq.onsuccess = () => res(rq.result || null);
+        rq.onerror = () => rej(rq.error);
+      });
+    } catch (e) { return null; }
+  }
+
+  /* 이미지 모델이 바뀌어 없어진 경우 다음 후보로 */
+  function imageModelOrder() {
+    const first = normalizeModel(state.settings.imageModel || 'gemini-nano-banana-2.1');
+    const list = [first].concat(IMAGE_FALLBACK.filter((m) => m !== first));
+    return list.filter((m) => IMAGE_MODELS[m] || m === first);
+  }
+
+  function imgPriceUSD(model, size) {
+    const spec = IMAGE_MODELS[model] || IMAGE_MODELS['gemini-nano-banana-2.1'];
+    const sz = (spec.sizes || ['1K']).indexOf(size) >= 0 ? size : '1K';
+    const base = (spec.perImg || {})[sz] || (spec.perImg || {})['1K'] || 0.0336;
+    /* 생각(thinking) 토큰은 실측 350~850토큰 수준 → 보수적으로 800토큰 가산 */
+    const think = spec.think ? (800 / 1e6) * ((IMAGE_PRICING[model] || {}).text || 7.5) : 0;
+    return { usd: base + think, base };
+  }
+  function imgPriceWon(model, size) { return Math.round(imgPriceUSD(model, size).usd * USD_KRW); }
+
+  function looksImageGen(text) {
+    const t = String(text || '').replace(/@[^\s@,]+/g, '').trim();
+    if (t.length < 5) return false;
+    return IMG_INTENT.test(t);
+  }
+  function imageAuthor(text) {
+    const raws = String(text || '').match(/@[^\s@,]+/g) || [];
+    if (raws.length) { const t = parseTargets(text); if (t && t.length) return t[0]; }
+    return assistantById('hongbo') || state.assistants[0];
+  }
+
+  function buildImagePrompt(text, files) {
+    const t = String(text || '').replace(/@[^\s@,]+/g, ' ').replace(/\s+/g, ' ').trim();
+    const out = ['만들 이미지: ' + t];
+    if ((files || []).some((x) => x.kind === 'image')) {
+      out.push('첨부한 사진의 대상과 분위기를 유지하면서 요청대로 바꿔 주세요.');
+    }
+    const docs = (files || []).filter((x) => x.kind === 'text');
+    if (docs.length) out.push('참고 문서: ' + docs.map((d) => String(d.text || '').slice(0, 1200)).join(' / '));
+    out.push('고품질, 자연스러운 조명, 안정적인 구도. 이미지 안의 글자는 정확한 한글과 숫자만 쓰고, 깨진 글자·워터마크·서명은 넣지 않습니다.');
+    return out.join('\n');
+  }
+
+  function friendlyImageError(status, body) {
+    const err = (body && body.error) || {};
+    const msg = String(err.message || (typeof body === 'string' ? body : '') || '').slice(0, 260);
+    const st = err.status || String(status);
+    if (/API_KEY_INVALID|API key not valid|invalid api key/i.test(msg)) {
+      return 'API 키가 유효하지 않습니다. Google AI Studio에서 키를 다시 확인해 주세요.';
+    }
+    if (status === 429 || /prepay|credit|billing|payment|paid|free tier|RESOURCE_EXHAUSTED|quota|exhausted/i.test(msg)) {
+      return '이미지 생성은 선불(유료) 결제된 키에서만 됩니다. AI Studio 결제 잔액·한도를 확인해 주세요. (무료 키는 이미지 생성이 막혀 있습니다)';
+    }
+    if (status === 403) return '이 키로는 이미지 생성이 막혀 있습니다(403). 무료 키 대신 선불 결제가 된 유료 키를 써 주세요.';
+    if (status === 404 || /not found|NOT_FOUND|not supported/i.test(msg)) {
+      return '이 모델을 쓸 수 없습니다(' + st + '). 설정에서 다른 이미지 모델을 골라 주세요.';
+    }
+    if (status === 400 && /safety|blocked|policy/i.test(msg)) return '요청이 안전 정책에 걸렸습니다. 표현을 바꿔 다시 시도해 주세요.';
+    return '이미지 생성에 실패했습니다(' + st + '): ' + (msg || '알 수 없는 오류');
+  }
+
+  async function postImage(model, payload, timeoutMs) {
+    const url = API_BASE + encodeURIComponent(model) + ':generateContent?key=' + encodeURIComponent(ai.apiKey);
+    const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    const limit = timeoutMs || 120000;
+    const timer = ctrl ? setTimeout(() => { try { ctrl.abort(); } catch (e) { /* 무시 */ } }, limit) : null;
+    let res;
+    try {
+      res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: ctrl ? ctrl.signal : undefined
+      });
+    } catch (e) {
+      if (timer) clearTimeout(timer);
+      if (e && e.name === 'AbortError') throw new Error('이미지 생성이 ' + Math.round(limit / 1000) + '초를 넘어 중단했습니다. 다시 시도해 주세요.');
+      throw new Error('인터넷에 연결하지 못했습니다. Wi-Fi·모바일 데이터를 확인해 주세요.');
+    }
+    if (timer) clearTimeout(timer);
+    const raw = await res.text();
+    let body = null;
+    try { body = JSON.parse(raw); } catch (e) { body = null; }
+    if (!res.ok) {
+      const err = new Error(friendlyImageError(res.status, body || raw));
+      const m = String(((body && body.error) || {}).message || '');
+      err.retryNext = res.status === 404 || (res.status === 400 && /model|not found|not supported/i.test(m));
+      throw err;
+    }
+    return body || {};
+  }
+
+  function imageCostOf(model, um) {
+    const p = IMAGE_PRICING[model] || IMAGE_PRICING['gemini-nano-banana-2.1'];
+    const u = um || {};
+    const pt = u.promptTokenCount || 0;
+    const ct = u.candidatesTokenCount || 0;
+    const th = u.thoughtsTokenCount || 0;
+    const imgTok = (((u.candidatesTokensDetails || []).find((d) => d.modality === 'IMAGE')) || {}).tokenCount || 0;
+    const textTok = Math.max(0, ct - imgTok);
+    const usd = (pt / 1e6) * p.in + (imgTok / 1e6) * p.img + (textTok / 1e6) * p.text + (th / 1e6) * p.text;
+    return { usd: Number(usd.toFixed(8)), krw: Number((usd * USD_KRW).toFixed(4)), imgTok, textTok, thinkTok: th };
+  }
+
+  function recordImageUsage(model, cost, pt, ct) {
+    if (!state.usage) state.usage = {};
+    const k = today();
+    const d = Object.assign(emptyUsage(), state.usage[k] || {});
+    d.calls += 1;
+    d.promptTokens += (pt || 0);
+    d.outputTokens += (ct || 0);
+    d.usd = Number((d.usd + cost.usd).toFixed(8));
+    d.krw = Number((d.krw + cost.krw).toFixed(4));
+    state.usage[k] = d;
+    const keys = Object.keys(state.usage).sort();
+    while (keys.length > 40) { delete state.usage[keys.shift()]; }
+    return cost;
+  }
+
+  async function generateImage(text, files) {
+    if (!ai.apiKey) throw new Error('API 키가 없습니다. ⚙️ 설정에서 Google AI Studio 키를 먼저 저장해 주세요.');
+    const refs = (files || []).filter((x) => x.kind === 'image' && x.data).slice(0, MAX_REF_IMAGES);
+    const parts = [{ text: buildImagePrompt(text, files) }];
+    refs.forEach((r) => parts.push({ inlineData: { mimeType: r.mime, data: r.data } }));
+
+    const size = state.settings.imageSize || '1K';
+    const aspect = state.settings.imageAspect || '1:1';
+    const order = imageModelOrder();
+    let lastErr = null;
+
+    for (let i = 0; i < order.length; i++) {
+      const model = order[i];
+      const spec = IMAGE_MODELS[model] || {};
+      const useSize = (spec.sizes || ['1K']).indexOf(size) >= 0 ? size : '1K';
+      const imageConfig = { aspectRatio: aspect };
+      if (useSize && model !== 'gemini-2.5-flash-image') imageConfig.imageSize = useSize;
+      const payload = {
+        contents: [{ role: 'user', parts }],
+        generationConfig: { imageConfig }
+      };
+      try {
+        const j = await postImage(model, payload);
+        const block = j.promptFeedback && j.promptFeedback.blockReason;
+        if (block) throw new Error('요청이 안전 정책에 걸렸습니다(' + block + '). 표현을 바꿔 다시 시도해 주세요.');
+        const cand = (j.candidates || [])[0] || {};
+        const cparts = (cand.content && cand.content.parts) || [];
+        const imgPart = cparts.find((p) => p.inlineData && /^image\//.test(p.inlineData.mimeType || ''));
+        if (!imgPart) {
+          if (cand.finishReason === 'SAFETY' || cand.finishReason === 'PROHIBITED_CONTENT') {
+            throw new Error('이 요청은 안전 정책상 이미지를 만들 수 없습니다. 표현이나 인물 묘사를 바꿔 주세요.');
+          }
+          throw new Error('이미지가 오지 않았습니다. 요청을 조금 더 구체적으로 적고 다시 시도해 주세요.');
+        }
+        const caption = cparts.filter((p) => p.text).map((p) => String(p.text)).join(' ').trim();
+        const dataURL = 'data:' + imgPart.inlineData.mimeType + ';base64,' + imgPart.inlineData.data;
+        const th = await makeThumb(dataURL);
+        const um = j.usageMetadata || {};
+        const cost = recordImageUsage(model, imageCostOf(model, um), um.promptTokenCount || 0, um.candidatesTokenCount || 0);
+        if (i > 0) addMessage({ type: 'system', text: '앞 모델을 쓸 수 없어 「' + (spec.label || model) + '」로 대신 만들었습니다.' });
+        return {
+          model, size: useSize, aspect, cost,
+          text: caption || '요청하신 이미지를 만들었습니다, 대장님.',
+          img: {
+            mime: imgPart.inlineData.mimeType, data: imgPart.inlineData.data,
+            t: th.t, w: th.w, h: th.h, aspect, size: useSize,
+            prompt: String(text || '').replace(/@[^\s@,]+/g, '').trim(),
+            model
+          }
+        };
+      } catch (e) {
+        lastErr = e;
+        if (e && e.retryNext && i < order.length - 1) continue;
+        throw e;
+      }
+    }
+    throw lastErr || new Error('이미지 생성에 실패했습니다.');
+  }
+
+  async function runImageGen(text, files, author) {
+    const a = author || assistantById('hongbo') || state.assistants[0];
+    draft.typingId = a.id;
+    showTyping(a, '그리는 중…');
+    renderStaff();
+    try {
+      const t0 = Date.now();
+      const res = await generateImage(text, files || []);
+      const elapsed = Date.now() - t0;
+      hideTyping();
+      const msg = addMessage({
+        type: 'assistant', senderId: a.id, tag: 'AI', text: res.text, img: res.img,
+        gen: { model: res.model, krw: res.cost.krw }
+      });
+      imgFull[msg.id] = { mime: res.img.mime, data: res.img.data };
+      idbPut(msg.id, imgFull[msg.id]);
+      delete msg.img.data;   // localStorage에는 큰 base64를 남기지 않는다
+      pruneImages();
+      touchAssistant(a);
+      a.lastReport = '이미지 1장 생성 · ' + ((IMAGE_MODELS[res.model] || {}).label || res.model) + ' · ' + wonText(res.cost.krw);
+      state.tasks.unshift({
+        id: uid('t'), title: summarize('이미지: ' + String(text).replace(/@[^\s@,]+/g, '').trim(), 40),
+        detail: '🎨 ' + String(text).replace(/@[^\s@,]+/g, '').trim(), ownerId: a.id, status: '완료',
+        room: state.activeRoom, createdAt: nowISO(), doneAt: nowISO(), source: '이미지 생성'
+      });
+      if (state.tasks.length > 300) state.tasks.splice(300);
+      draft.typingId = null;
+      save(); saveNow();
+      renderChatOnly(true); renderTasks(); renderStaff(); renderTabs(); renderCost();
+      toast('🎨 완성 · ' + ((IMAGE_MODELS[res.model] || {}).label || res.model) + ' · 약 ' + wonText(res.cost.krw) +
+        ' · ' + (elapsed / 1000).toFixed(1) + '초');
+    } catch (e) {
+      hideTyping();
+      draft.typingId = null;
+      addMessage({ type: 'system', text: '🎨 이미지 생성 실패 — ' + (e.message || '알 수 없는 오류') });
+      renderChatOnly(true);
+      toast('⚠️ 이미지 생성 실패: ' + (e.message || ''));
+    }
+    save(); saveNow();
+  }
+
+  /* 대화 저장 용량 보호: 최근 30건만 썸네일 유지 */
+  function pruneImages() {
+    let seen = 0;
+    Object.keys(state.messages || {}).forEach((k) => {
+      const list = state.messages[k] || [];
+      for (let i = list.length - 1; i >= 0; i--) {
+        const m = list[i];
+        const hasImg = (m.img && m.img.t) || (m.atts || []).some((x) => x.th);
+        if (!hasImg) continue;
+        seen += 1;
+        if (seen <= 30) continue;
+        if (m.img) { m.img.t = ''; }
+        (m.atts || []).forEach((x) => { x.th = ''; });
+      }
+    });
+  }
+
+  function findMessage(id) {
+    const rooms = Object.keys(state.messages || {});
+    for (const k of rooms) {
+      const hit = (state.messages[k] || []).find((m) => m.id === id);
+      if (hit) return hit;
+    }
+    return null;
+  }
+
+  function b64ToBlob(b64, mime) {
+    const bin = typeof atob === 'function' ? atob(b64) : '';
+    const len = bin.length;
+    const arr = new Uint8Array(len);
+    for (let i = 0; i < len; i++) arr[i] = bin.charCodeAt(i);
+    return new Blob([arr], { type: mime || 'image/jpeg' });
+  }
+
+  async function imageSourceOf(id) {
+    if (imgFull[id]) return imgFull[id];
+    const fromDb = await idbGet(id);
+    if (fromDb) { imgFull[id] = fromDb; return fromDb; }
+    const msg = findMessage(id);
+    if (msg && msg.img && msg.img.t) return { mime: 'image/jpeg', data: (msg.img.t.split(',')[1] || ''), thumbOnly: true };
+    return null;
+  }
+
+  async function saveImage(id) {
+    const src = await imageSourceOf(id);
+    if (!src || !src.data) { toast('이미지 원본을 찾지 못했습니다. (이 기기 저장이 지워졌을 수 있습니다)'); return; }
+    const msg = findMessage(id) || {};
+    const ext = /\.png$|png/i.test(src.mime || '') ? 'png' : 'jpg';
+    const d = new Date();
+    const stamp = d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) + '_' + pad2(d.getHours()) + pad2(d.getMinutes());
+    try {
+      const blob = b64ToBlob(src.data, src.mime || 'image/jpeg');
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = '마르스_이미지_' + stamp + '.' + ext;
+      document.body.appendChild(a); a.click();
+      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+      toast(src.thumbOnly
+        ? '미리보기 화질로 저장했습니다(원본은 이 세션에만 있습니다).'
+        : '이미지를 저장했습니다' + (msg.img && msg.img.size ? ' (' + msg.img.size + ')' : ''));
+    } catch (e) {
+      toast('저장에 실패했습니다. 브라우저 다운로드 설정을 확인해 주세요.');
+    }
+  }
+
+  async function openLightbox(id) {
+    const msg = findMessage(id);
+    if (!msg || !msg.img) return;
+    draft.lbId = id;
+    if (draft.lbURL) { try { URL.revokeObjectURL(draft.lbURL); } catch (e) { /* 무시 */ } draft.lbURL = null; }
+    $('#lbImg').src = msg.img.t || '';
+    $('#lbCap').textContent = ((IMAGE_MODELS[msg.img.model] || {}).label || msg.img.model || '') +
+      (msg.img.aspect ? ' · ' + msg.img.aspect + ' ' + (msg.img.size || '') : '');
+    $('#lightbox').classList.remove('hide');
+    const src = await imageSourceOf(id);
+    if (src && src.data && draft.lbId === id) {
+      try {
+        draft.lbURL = URL.createObjectURL(b64ToBlob(src.data, src.mime));
+        $('#lbImg').src = draft.lbURL;
+      } catch (e) { /* 썸네일 유지 */ }
+    }
+  }
+  function closeLightbox() {
+    $('#lightbox').classList.add('hide');
+    draft.lbId = null;
+    if (draft.lbURL) { try { URL.revokeObjectURL(draft.lbURL); } catch (e) { /* 무시 */ } draft.lbURL = null; }
+    $('#lbImg').removeAttribute('src');
+  }
+
+  function setGenMode(on) {
+    attach.mode = !!on;
+    const btn = $('#btnImgMode');
+    if (btn) btn.classList.toggle('on', attach.mode);
+    const row = $('#genRow');
+    if (row) row.classList.toggle('hide', !attach.mode);
+    if (attach.mode) renderRatioChips();
+    setPlaceholder();
+    if (attach.mode) toast('🎨 이미지 생성 모드 · ' + state.settings.imageSize + ' · 약 ' + imgPriceWon(state.settings.imageModel, state.settings.imageSize) + '원');
+  }
+
+  function renderRatioChips() {
+    const wrap = $('#ratioChips');
+    if (!wrap) return;
+    const cur = state.settings.imageAspect || '1:1';
+    wrap.innerHTML = IMAGE_ASPECTS.map((a) =>
+      '<button class="chip ratio' + (a === cur ? ' active' : '') + '" data-ratio="' + esc(a) + '">' + esc(a) + '</button>')
+      .join('');
+    const hint = $('#genHint');
+    if (hint) {
+      hint.textContent = cur + ' · ' + state.settings.imageSize + ' · 약 ' +
+        imgPriceWon(state.settings.imageModel, state.settings.imageSize) + '원';
+    }
+  }
+
+  async function retryImage(id) {
+    const msg = findMessage(id);
+    if (!msg || !msg.img || !msg.img.prompt) return;
+    if (busy) { toast('지금 작업 중입니다. 잠시 후 다시 눌러 주세요.'); return; }
+    if (!confirm('같은 요청으로 이미지를 다시 만들까요?\n장당 약 ' + imgPriceWon(state.settings.imageModel, msg.img.size || state.settings.imageSize) + '원이 더 나갑니다.')) return;
+    busy = true; $('#btnSend').disabled = true;
+    await runImageGen(msg.img.prompt, [], assistantById(msg.senderId) || imageAuthor(''));
+    busy = false; $('#btnSend').disabled = false;
+    save(); renderAll();
+  }
+
+  /* ───────── 이미지 생성 설정 UI ───────── */
+  function imgDynHTML(s) {
+    const spec = IMAGE_MODELS[s.imageModel] || IMAGE_MODELS['gemini-nano-banana-2.1'];
+    const sizes = spec.sizes || ['1K'];
+    const cur = sizes.indexOf(s.imageSize) >= 0 ? s.imageSize : sizes[0];
+    return '<div class="field"><label>해상도</label><div class="seg" id="segImgSize">' +
+      sizes.map((sz) => '<button data-isize="' + esc(sz) + '" class="' + (sz === cur ? 'on' : '') + '">' + esc(sz) + '</button>').join('') +
+      '</div><div class="hint">장당 약 <b>' + imgPriceWon(s.imageModel, cur) + '원</b> · 2K·4K는 더 비쌉니다.</div></div>' +
+      '<div class="field"><label>기본 비율</label><div class="seg" id="segImgAspect">' +
+      IMAGE_ASPECTS.map((a) => '<button data-iaspect="' + esc(a) + '" class="' + (a === s.imageAspect ? 'on' : '') + '">' + esc(a) + '</button>').join('') +
+      '</div><div class="hint">1:1(정사각) · 16:9(가로) · 9:16(쇼츠·세로) · 4:5(인스타 피드)</div></div>' +
+      priceTableHTML(s);
+  }
+
+  function priceTableHTML(s) {
+    const sizes = ['1K', '2K', '4K'];
+    const rows = Object.keys(IMAGE_MODELS).map((m) => {
+      const spec = IMAGE_MODELS[m];
+      const cells = sizes.map((sz) => {
+        if ((spec.sizes || []).indexOf(sz) < 0) return '<td>–</td>';
+        const won = imgPriceWon(m, sz);
+        const on = (m === s.imageModel && sz === (s.imageSize || '1K'));
+        return '<td class="' + (on ? 'pick' : '') + '">' + won + '원</td>';
+      }).join('');
+      return '<tr class="' + (m === s.imageModel ? 'on' : '') + '"><td class="l">' + esc(spec.label) + '</td>' + cells + '</tr>';
+    }).join('');
+    return '<table class="price-tbl"><thead><tr><th>모델</th><th>1K</th><th>2K</th><th>4K</th></tr></thead><tbody>' +
+      rows + '</tbody></table>' +
+      '<div class="hint">장당 비용은 <b>실제 응답의 이미지·생각(thinking) 토큰으로 계산한 추정치</b>입니다. ' +
+      '기본 단가는 2.1 1K $0.0336 · Pro 1K/2K $0.134 (2026-11-27 models API·실호출 확인, 환율 ' + USD_KRW + '원).</div>';
+  }
+
+  function refreshImgUI() {
+    const s = draft.sheet;
+    const el = $('#imgDyn');
+    if (!s || !el) return;
+    el.innerHTML = imgDynHTML(s);
+  }
+
   /* ───────── 설정 시트 ───────── */
   function openSettings() {
     draft.sheet = {
       model: state.settings.model,
       mode: state.settings.responseMode,
       showCost: state.settings.showCost,
+      imageModel: state.settings.imageModel || 'gemini-nano-banana-2.1',
+      imageSize: state.settings.imageSize || '1K',
+      imageAspect: state.settings.imageAspect || '1:1',
       testResult: draft.sheet ? draft.sheet.testResult : null
     };
     draft.gd = null;
@@ -2192,6 +3036,18 @@ input,textarea,select{font-family:inherit;color:inherit}
       '대화 기록은 최근 8개만 보내고, 넣은 지침은 활성 분만 통째로 넣어 지침을 실제로 따르게 합니다. 한 번 호출은 보통 <b>1~3원</b> 수준입니다.</div>' +
       '</div>' +
 
+      /* 이미지 생성 */
+      '<div class="sec"><p class="sec-title">🎨 이미지 생성 (Nano Banana)</p>' +
+      '<div class="field"><label>모델</label><select id="setImgModel">' +
+      Object.keys(IMAGE_MODELS).map((m) => '<option value="' + esc(m) + '"' +
+        (s.imageModel === m ? ' selected' : '') + '>' + esc(IMAGE_MODELS[m].label) + ' · ' +
+        esc(IMAGE_MODELS[m].note) + '</option>').join('') +
+      '</select><div class="hint">회의실 입력줄의 <b>🎨 버튼</b>을 켜고 요청하거나, <b>“@홍보니 이미지 만들어줘”</b>처럼 말하면 이 모델로 그립니다.</div></div>' +
+      '<div id="imgDyn">' + imgDynHTML(s) + '</div>' +
+      '<div class="notice" style="margin-top:8px">💳 <b>이미지 생성은 선불(유료) 결제된 키에서만</b> 됩니다. 무료 키는 429 오류가 돌아오고 앱이 그 안내를 띄웁니다.<br>' +
+      '가격은 <b>1K 기준 장당 약 ' + imgPriceWon('gemini-nano-banana-2.1', '1K') + '원</b>, Pro는 약 ' + imgPriceWon('gemini-3-pro-image', '1K') + '원 수준입니다(생각 토큰 포함 추정).</div>' +
+      '</div>' +
+
       /* 사용량 */
       '<div class="sec"><p class="sec-title">💰 사용량</p>' + usageHTML() + '</div>' +
 
@@ -2250,6 +3106,13 @@ input,textarea,select{font-family:inherit;color:inherit}
     }));
     const modelEl = $('#setModel');
     if (modelEl) modelEl.addEventListener('change', () => { s.model = modelEl.value; });
+    const imgModelEl = $('#setImgModel');
+    if (imgModelEl) imgModelEl.addEventListener('change', () => {
+      s.imageModel = imgModelEl.value;
+      const spec = IMAGE_MODELS[s.imageModel] || {};
+      if ((spec.sizes || ['1K']).indexOf(s.imageSize) < 0) s.imageSize = (spec.sizes || ['1K'])[0];
+      refreshImgUI();
+    });
     const test = $('#btnTestAI');
     if (test) test.addEventListener('click', () => testAI());
     const clear = $('#btnClearKey');
@@ -2318,6 +3181,11 @@ input,textarea,select{font-family:inherit;color:inherit}
     state.settings.responseMode = s.mode;
     state.settings.model = s.model;
     state.settings.showCost = s.showCost;
+    state.settings.imageModel = Object.prototype.hasOwnProperty.call(IMAGE_MODELS, s.imageModel)
+      ? s.imageModel : 'gemini-nano-banana-2.1';
+    const spec = IMAGE_MODELS[state.settings.imageModel] || {};
+    state.settings.imageSize = (spec.sizes || ['1K']).indexOf(s.imageSize) >= 0 ? s.imageSize : '1K';
+    state.settings.imageAspect = IMAGE_ASPECTS.indexOf(s.imageAspect) >= 0 ? s.imageAspect : '1:1';
     $$('[data-staff-name]').forEach((el) => {
       const a = assistantById(el.dataset.staffName);
       if (!a) return;
@@ -2336,6 +3204,8 @@ input,textarea,select{font-family:inherit;color:inherit}
     saveNow();
     closeSettings();
     renderAll();
+    renderRatioChips();
+    if (attach.items.length) renderAttach();
     toast('설정을 저장했습니다');
   }
 
@@ -2349,6 +3219,32 @@ input,textarea,select{font-family:inherit;color:inherit}
         if (state.ui.tab === 'chat') renderChat(true);
         return;
       }
+      const iSz = ev.target.closest('[data-isize]');
+      if (iSz && draft.sheet) {
+        draft.sheet.imageSize = iSz.dataset.isize;
+        refreshImgUI();
+        return;
+      }
+      const iAsp = ev.target.closest('[data-iaspect]');
+      if (iAsp && draft.sheet) {
+        draft.sheet.imageAspect = iAsp.dataset.iaspect;
+        refreshImgUI();
+        return;
+      }
+      const attDel = ev.target.closest('[data-att-del]');
+      if (attDel) { removeAttach(attDel.dataset.attDel); return; }
+      const ratioBtn = ev.target.closest('[data-ratio]');
+      if (ratioBtn) {
+        state.settings.imageAspect = ratioBtn.dataset.ratio;
+        save(); renderRatioChips();
+        return;
+      }
+      const imgSave = ev.target.closest('[data-img-save]');
+      if (imgSave) { saveImage(imgSave.dataset.imgSave); return; }
+      const imgOpen = ev.target.closest('[data-img-open]');
+      if (imgOpen) { openLightbox(imgOpen.dataset.imgOpen); return; }
+      const imgRetry = ev.target.closest('[data-img-retry]');
+      if (imgRetry) { retryImage(imgRetry.dataset.imgRetry); return; }
       const roomBtn = ev.target.closest('.room');
       if (roomBtn) {
         state.activeRoom = roomBtn.dataset.room;
@@ -2439,6 +3335,24 @@ input,textarea,select{font-family:inherit;color:inherit}
     });
 
     $('#btnSend').addEventListener('click', send);
+    const btnAtt = $('#btnAttach');
+    if (btnAtt) btnAtt.addEventListener('click', () => { const el = $('#attachFile'); if (el) el.click(); });
+    const btnGen = $('#btnImgMode');
+    if (btnGen) btnGen.addEventListener('click', () => setGenMode(!attach.mode));
+    const attFile = $('#attachFile');
+    if (attFile) attFile.addEventListener('change', (e) => {
+      const list = Array.prototype.slice.call((e.target.files || []));
+      if (list.length) addFiles(list);
+      e.target.value = '';
+    });
+    const lbc1 = $('#btnLbClose');
+    if (lbc1) lbc1.addEventListener('click', closeLightbox);
+    const lbc2 = $('#btnLbClose2');
+    if (lbc2) lbc2.addEventListener('click', closeLightbox);
+    const lbSave = $('#btnLbSave');
+    if (lbSave) lbSave.addEventListener('click', () => { if (draft.lbId) saveImage(draft.lbId); });
+    const lb = $('#lightbox');
+    if (lb) lb.addEventListener('click', (e) => { if (e.target.id === 'lightbox') closeLightbox(); });
     $('#input').addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(); }
     });
@@ -2478,7 +3392,10 @@ input,textarea,select{font-family:inherit;color:inherit}
     });
 
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && !$('#settingsOverlay').classList.contains('hide')) closeSettings();
+      if (e.key !== 'Escape') return;
+      const lb = $('#lightbox');
+      if (lb && !lb.classList.contains('hide')) { closeLightbox(); return; }
+      if (!$('#settingsOverlay').classList.contains('hide')) closeSettings();
     });
 
     const flush = () => { if (state) { try { saveNow(); } catch (err) { /* 무시 */ } } };
@@ -2494,6 +3411,14 @@ input,textarea,select{font-family:inherit;color:inherit}
   function setPlaceholder() {
     const inp = $('#input');
     if (!inp) return;
+    if (attach.mode) {
+      inp.placeholder = '🎨 만들 이미지를 설명해 주세요';
+      return;
+    }
+    if (attach.items.length) {
+      inp.placeholder = '📎 첨부 ' + attach.items.length + '건 · 무엇을 확인할까요?';
+      return;
+    }
     inp.placeholder = window.innerWidth <= 400
       ? '지시를 내려주세요 (@all)'
       : '대장님, 지시를 내려주세요 (@all 또는 @니케)';
