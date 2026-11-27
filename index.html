@@ -2307,27 +2307,27 @@ input,textarea,select{font-family:inherit;color:inherit}
   const IMAGE_MODELS = {
     'gemini-nano-banana-2.1': {
       label: 'Nano Banana 2.1', sizes: ['1K', '2K', '4K'],
-      perImg: { '1K': 0.0336, '2K': 0.0504, '4K': 0.113 }, think: true,
+      perImg: { '1K': 0.0336, '2K': 0.0504, '4K': 0.113 }, thinkTok: 1600,
       note: '기본 추천 · 품질/가격 균형'
     },
     'gemini-3.1-flash-lite-image': {
       label: 'Nano Banana 2 Lite', sizes: ['1K'],
-      perImg: { '1K': 0.0336 }, think: false,
+      perImg: { '1K': 0.0336 }, thinkTok: 0,
       note: '가장 빠름 · 1K 전용 · 편집 반복엔 약함'
     },
     'gemini-3.1-flash-image': {
       label: 'Nano Banana 2', sizes: ['1K', '2K', '4K'],
-      perImg: { '1K': 0.067, '2K': 0.101, '4K': 0.151 }, think: false,
+      perImg: { '1K': 0.067, '2K': 0.101, '4K': 0.151 }, thinkTok: 0,
       note: '글자·다중 참조에 강함'
     },
     'gemini-3-pro-image': {
       label: 'Nano Banana Pro', sizes: ['1K', '2K', '4K'],
-      perImg: { '1K': 0.134, '2K': 0.134, '4K': 0.24 }, think: true,
+      perImg: { '1K': 0.134, '2K': 0.134, '4K': 0.24 }, thinkTok: 400,
       note: '최고 품질 · 글자·레이아웃 정밀'
     },
     'gemini-2.5-flash-image': {
       label: 'Nano Banana (구형)', sizes: ['1K'],
-      perImg: { '1K': 0.039 }, think: false,
+      perImg: { '1K': 0.039 }, thinkTok: 0,
       note: '구형 · 2027-03-15 지원종료 예정'
     }
   };
@@ -2397,8 +2397,8 @@ input,textarea,select{font-family:inherit;color:inherit}
     const spec = IMAGE_MODELS[model] || IMAGE_MODELS['gemini-nano-banana-2.1'];
     const sz = (spec.sizes || ['1K']).indexOf(size) >= 0 ? size : '1K';
     const base = (spec.perImg || {})[sz] || (spec.perImg || {})['1K'] || 0.0336;
-    /* 생각(thinking) 토큰은 실측 350~850토큰 수준 → 보수적으로 800토큰 가산 */
-    const think = spec.think ? (800 / 1e6) * ((IMAGE_PRICING[model] || {}).text || 7.5) : 0;
+    /* 생각(thinking) 토큰: 2.1 실측 761~1,667개 → 보수적으로 1,600개 가산 */
+    const think = ((spec.thinkTok || 0) / 1e6) * ((IMAGE_PRICING[model] || {}).text || 7.5);
     return { usd: base + think, base };
   }
   function imgPriceWon(model, size) { return Math.round(imgPriceUSD(model, size).usd * USD_KRW); }
@@ -3045,7 +3045,7 @@ input,textarea,select{font-family:inherit;color:inherit}
       '</select><div class="hint">회의실 입력줄의 <b>🎨 버튼</b>을 켜고 요청하거나, <b>“@홍보니 이미지 만들어줘”</b>처럼 말하면 이 모델로 그립니다.</div></div>' +
       '<div id="imgDyn">' + imgDynHTML(s) + '</div>' +
       '<div class="notice" style="margin-top:8px">💳 <b>이미지 생성은 선불(유료) 결제된 키에서만</b> 됩니다. 무료 키는 429 오류가 돌아오고 앱이 그 안내를 띄웁니다.<br>' +
-      '가격은 <b>1K 기준 장당 약 ' + imgPriceWon('gemini-nano-banana-2.1', '1K') + '원</b>, Pro는 약 ' + imgPriceWon('gemini-3-pro-image', '1K') + '원 수준입니다(생각 토큰 포함 추정).</div>' +
+      '가격은 <b>1K 기준 장당 약 ' + imgPriceWon('gemini-nano-banana-2.1', '1K') + '원</b>, Pro는 약 ' + imgPriceWon('gemini-3-pro-image', '1K') + '원 수준으로, 생각(thinking) 토큰까지 넣은 <b>보수적 추정치</b>입니다.</div>' +
       '</div>' +
 
       /* 사용량 */

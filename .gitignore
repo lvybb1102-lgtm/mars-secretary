@@ -2,3 +2,4 @@ make_icons.py
 deploy_e2e.py
 final_verify.py
 verify_v4_attach_image.py
+verify_live_v4.py
