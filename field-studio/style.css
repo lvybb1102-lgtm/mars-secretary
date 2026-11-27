@@ -59,7 +59,7 @@ h2{font-size:15px;margin:0 0 8px;letter-spacing:-.01em}
 
 /* tabs */
 .tabs{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;
-  display:grid;grid-template-columns:repeat(4,1fr);background:rgba(255,255,255,.97);border-top:1px solid var(--line);
+  display:grid;grid-template-columns:repeat(4,1fr);background:#fff;border-top:1px solid var(--line);
   padding:7px 4px calc(8px + var(--safe-b));z-index:30;backdrop-filter:blur(10px)}
 .tab{text-align:center;font-size:10.5px;color:#8c9b96;padding:2px 0;border-radius:10px}
 .tab i{display:block;font-size:18px;font-style:normal;line-height:1.4}
