@@ -1563,6 +1563,10 @@ input,textarea,select{font-family:inherit;color:inherit}
     }
     if (Array.isArray(v)) return v;
     if (v && typeof v === 'object') {
+      // 배열이 아니라 단일 객체({"id":..,"text":..})로 온 경우
+      if ((v.id || v.name) && (v.text || v.content)) {
+        return [{ id: String(v.id || v.name || ''), text: String(v.text || v.content || '') }];
+      }
       for (const k of ['items', 'replies', 'data', 'result']) if (Array.isArray(v[k])) return v[k];
       const arr = Object.keys(v).map((k) => ({
         id: k,
@@ -1595,10 +1599,21 @@ input,textarea,select{font-family:inherit;color:inherit}
     }
     const got = Object.keys(out).length;
     if (!got) {
-      // 여러 명 합본인데 형식을 못 읽었으면 엉뚱한 응답을 붙이지 않고 로컬 응답으로 대체
-      if (targets.length === 1) {
-        out[targets[0].id] = String(res.text || '').trim();
-      } else {
+      // 형식이 조금 어긋나도 쓸 수 있는 본문이면 건져서 붙인다. (원본 JSON을 그대로 보여주지 않는다)
+      const arr = Array.isArray(items) ? items.filter(Boolean) : [];
+      const bad = {};
+      targets.forEach((a) => { bad[a.id] = 1; bad[a.name] = 1; });
+      const texts = arr.map((it) => String(it.text || it.content || '').trim())
+        .filter((t) => t && !bad[t] && !/^[[{]/.test(t));
+      const plain = String(res.text || '').trim();
+      const plainOK = plain && !/^[[{]/.test(plain);
+      if (texts.length >= targets.length) {
+        targets.forEach((a, i) => { if (texts[i]) out[a.id] = texts[i]; });
+      } else if (targets.length === 1) {
+        const body = texts.slice().sort((x, y) => y.length - x.length)[0] || (plainOK ? plain : '');
+        if (body) out[targets[0].id] = body;
+      }
+      if (!Object.keys(out).length) {
         return { map: {}, usage: res.usage, cost: res.cost, model: res.model, fallbackLocal: true };
       }
     }
