@@ -3416,7 +3416,8 @@ input,textarea,select{font-family:inherit;color:inherit}
       return;
     }
     if (attach.items.length) {
-      inp.placeholder = '📎 첨부 ' + attach.items.length + '건 · 무엇을 확인할까요?';
+      const n = attach.items.length;
+      inp.placeholder = (window.innerWidth <= 400 ? '📎 ' + n + '건 · ' : '📎 첨부 ' + n + '건 · ') + '물어보세요';
       return;
     }
     inp.placeholder = window.innerWidth <= 480
