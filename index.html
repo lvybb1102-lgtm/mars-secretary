@@ -2212,7 +2212,7 @@ input,textarea,select{font-family:inherit;color:inherit}
           });
         } else if (kind === 'pdf') {
           if ((f.size || 0) > MAX_PDF_BYTES) {
-            toast('⚠️ PDF는 8MB 이하만 됩니다. (이 파일 ' + bytesText(f.size) + ') 설정 → JSON 백업처럼 나눠 보내 주세요.');
+            toast('⚠️ PDF는 8MB 이하만 됩니다. (이 파일 ' + bytesText(f.size) + ') 페이지를 나눠 저장하거나, 화면을 사진으로 찍어 보내 주세요.');
             continue;
           }
           const full = await readAsDataURL(f);
