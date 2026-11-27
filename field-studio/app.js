@@ -308,7 +308,7 @@
       ctx.drawImage(c, bx, by, bw, bh, bx, by, bw, bh);
       ctx.restore();
     } else {
-      const block = Math.max(6, rr / 3.2);
+      const block = Math.max(5, rr / 4.2);
       const tw = Math.max(1, Math.round(bw / block)), th = Math.max(1, Math.round(bh / block));
       const t = document.createElement('canvas');
       t.width = tw; t.height = th;
@@ -401,7 +401,7 @@
 - 고객이 실제로 검색하는 말(기종명·오류코드·증상)로 쓴다. '프린터 고장'처럼 뭉뚱그린 말은 쓰지 않는다.
 
 [블로그 본문]
-- 본문 전체 1,600~1,900자. 소제목 4~6개, 문단은 2~3문장으로 짧게.
+- 본문 전체 1,600~1,900자. 이보다 짧으면 실패다. 소제목 4~6개, 문단은 2~3문장으로 짧게.
 - 순서: 결론(3줄 요약) → 원인 → 조치(단계별) → 확인(시험 출력·스캔) → 자주 묻는 질문 2~3개 → CTA.
 - 첫 문장은 고객이 검색창에 치는 증상 문장으로 시작한다. 인사는 "안녕하세요, 잉크원·아싸렌탈 수원지사입니다."를 한 번만 쓴다.
 - 사진에서 실제로 보이는 것과 메모에 적힌 사실만 쓴다. 기종명·오류코드·부품명·소요시간·출력매수는 근거가 없으면 쓰지 않는다. 모르는 값은 문장 자체를 뺀다.
@@ -414,7 +414,7 @@
 - 본문 맨 끝에 해시태그 8~10개를 한 줄로 붙인다(지역 2 + 업종 2 + 기종 2 + 서비스 2~4). 10개를 넘기지 않는다.
 
 [스레드 글]
-- 250~350자, 3~6줄. 문제 1줄 → 원인·방법 3줄 → 블로그 링크 1줄.
+- 250~350자, 3~6줄. 250자보다 짧으면 실패다. 문제 1줄 → 원인·방법 3줄 → 블로그 링크 1줄.
 - 모든 문장이 서술어로 끝나게 쓴다(중간에 끊긴 문장 금지). 이모지 0~2개, 해시태그 0~2개.
 
 [15초 쇼츠 대본]
@@ -476,7 +476,7 @@
     lines.push('[TITLE2] 두 번째 제목');
     lines.push('[TITLE3] 세 번째 제목');
     lines.push('[BLOG] 네이버에 붙여넣을 HTML 본문 (1,600자 이상)');
-    lines.push('[TAGS] 해시태그를 공백으로 구분해 한 줄');
+    lines.push('[TAGS] 해시태그를 공백으로 구분해 한 줄 (# 붙여서, 8~10개) — 반드시 출력한다');
     lines.push('[THREADS] 스레드 글 (250자 이상)');
     lines.push('[SHORTS] 0-3초|화면 자막|음성 대사 형식으로 한 줄씩 (3~4줄)');
     lines.push('[INSTA] 인스타 캡션');
@@ -650,13 +650,24 @@
     }
   }
 
+  function parseTags(sec, html) {
+    const clean = (list) => list
+      .map((t) => String(t || '').replace(/^[^#\w가-힣]+/, '').replace(/[^#\w가-힣]+$/, ''))
+      .filter((t) => t && t.replace(/#/g, '').length > 1)
+      .map((t) => (t.startsWith('#') ? t : '#' + t));
+    const fromSec = clean(String(sec.TAGS || '').replace(/[,、]/g, ' ').split(/\s+/));
+    const fromBody = clean((String(html || '').match(/#[^\s<>#,]+/g) || []));
+    const seen = new Set();
+    const out = [];
+    fromSec.concat(fromBody).forEach((t) => {
+      if (!seen.has(t)) { seen.add(t); out.push(t); }
+    });
+    return out.slice(0, 12);
+  }
+
   function finishResult(sec, r) {
     const titles = [sec.TITLE1, sec.TITLE2, sec.TITLE3].filter(Boolean).map((t) => t.replace(/^["'“”]|["'“”]$/g, '').trim());
-    const tags = String(sec.TAGS || '')
-      .replace(/\n/g, ' ')
-      .split(/\s+/)
-      .filter((t) => t.startsWith('#'))
-      .map((t) => t.replace(/[.,]/g, ''));
+    const tags = parseTags(sec, sec.BLOG);
     const res = {
       id: 'r' + Date.now(),
       at: new Date().toISOString(),
