@@ -208,13 +208,13 @@ def main():
            'share_target files 필드·accept: %s' % (files[:1],))
 
         sww = pg.evaluate("""async () => { const r = await fetch('./sw.js', {cache:'no-store'}); return await r.text(); }""")
-        ok("ink1-field-studio-v5" in sww and "receiveShare" in sww and "__share__" in sww,
-           'sw.js: 캐시 v5 · 공유 수신 핸들러')
+        ok("ink1-field-studio-v6" in sww and "receiveShare" in sww and "__share__" in sww,
+           'sw.js: 캐시 v6 · 공유 수신 핸들러')
         try:
             keys = pg.evaluate("async () => 'serviceWorker' in navigator ? await caches.keys() : []")
         except Exception:
             keys = []
-        ok('ink1-field-studio-v5' in keys, '서비스워커 v5 캐시 활성: %s' % keys)
+        ok('ink1-field-studio-v6' in keys, '서비스워커 v6 캐시 활성: %s' % keys)
 
         # ── 6. 공유받기 실제 동작 (POST multipart → sw.js → 앱 사진 목록)
         res = pg.evaluate("""async () => {

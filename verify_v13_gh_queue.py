@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""잉크원_st_AI v1.3 검증 — ⚡ 원클릭 바로발행 큐 (비공개 GitHub 저장소)
+"""잉크원_st_AI v1.3 회귀 검증 — ⚡ 원클릭 바로발행 큐 (비공개 GitHub 저장소)
+
+v1.4(IndexedDB 사진 보관) 이후에도 그대로 통과해야 하는 회귀 스위트.
+- 서비스워커 캐시는 v6(ink1-field-studio-v6)을 기대한다.
+- [열기]가 사진을 복원하므로, '사진 0장' 경로는 보관소를 비워 다른 기기 상황을 재현해 검사한다.
 
 사용: python3 verify_v13_gh_queue.py            # 로컬(127.0.0.1) 서빙해 검증
       python3 verify_v13_gh_queue.py <배포URL>   # 배포 URL 그대로 검증
@@ -415,6 +419,21 @@ def main():
         pg.reload(wait_until='load')
         pg.wait_for_timeout(1000)
         GH['calls'].clear()
+        # v1.4: 사진은 IndexedDB에 보관되어 [열기] 때 복원된다. 여기서는 '사진이 없는 기기(다른 폰)'를
+        # 재현하려고 보관소를 먼저 비운다 — 사진 0장 경로는 그대로 회귀 검사한다.
+        pg.evaluate('''() => new Promise((res) => {
+          const rq = indexedDB.open('ink1_field_studio_db');
+          rq.onsuccess = () => {
+            const db = rq.result;
+            if (!db.objectStoreNames.contains('photos_by_result')) { res(0); return; }
+            const tx = db.transaction(['photos_by_result', 'results_meta'], 'readwrite');
+            tx.objectStore('photos_by_result').clear();
+            tx.objectStore('results_meta').clear();
+            tx.oncomplete = () => res(1);
+            tx.onerror = () => res(0);
+          };
+          rq.onerror = () => res(0);
+        })''')
         pg.click('#tabs .tab[data-v=home]')
         pg.wait_for_timeout(300)
         pg.click('#histList .hitem')
@@ -446,7 +465,7 @@ def main():
         sw = pg.evaluate("navigator.serviceWorker.ready.then(() => true).catch(() => false)")
         ok(sw is True, '서비스워커 등록')
         ck = pg.evaluate("caches.keys()")
-        ok('ink1-field-studio-v5' in ck, '서비스워커 v5 캐시 활성: %s' % ck)
+        ok('ink1-field-studio-v6' in ck, '서비스워커 v6 캐시 활성: %s' % ck)
 
         # ── 11. 실네트워크 확인 — 토큰 없이 공개 저장소 GET(진짜 api.github.com)
         ctx2 = b.new_context(viewport={'width': 430, 'height': 932}, device_scale_factor=2, has_touch=True, is_mobile=True)

@@ -144,7 +144,8 @@
     history: [],
     pub: {},
     cfg: { model: 'auto' },
-    busy: false
+    busy: false,
+    restored: false          // 최근 원고를 열어 사진을 IndexedDB에서 되살린 상태
   };
 
   const store = {
@@ -169,12 +170,191 @@
     try { S.pub = JSON.parse(store.get(LS.pub) || '{}') || {}; } catch (e) { S.pub = {}; }
   }
   function saveHistory() {
-    while (S.history.length > 20) S.history.pop();
+    const dropped = [];
+    while (S.history.length > 20) dropped.push(S.history.pop());
     let ok = store.set(LS.hist, JSON.stringify(S.history));
     if (!ok) {                       // 용량 초과 → 오래된 것부터 버린다
-      while (S.history.length > 3 && !ok) { S.history.pop(); ok = store.set(LS.hist, JSON.stringify(S.history)); }
+      while (S.history.length > 3 && !ok) { dropped.push(S.history.pop()); ok = store.set(LS.hist, JSON.stringify(S.history)); }
       if (!ok) toast('브라우저 저장 공간이 부족해 기록을 저장하지 못했습니다.', true);
     }
+    dropped.forEach((h) => { if (h && h.id) photosDrop(h.id); });   // 기록에서 빠진 원고의 사진도 함께 정리
+  }
+
+  /* ───────────────── 원고별 사진 보관소 (IndexedDB) ─────────────────
+     localStorage(약 5MB)에는 최근 원고 목록과 대표 썸네일 1장만 넣고,
+     현장 사진(가리기까지 반영된 1280px 원본)은 IndexedDB에 원고 ID로 보관한다.
+     → 브라우저를 닫았다가 홈에서 [열기]해도 사진이 그대로 살아나고, 바로발행 전송에 사진이 함께 올라간다.
+     최근 20건 · 60MB까지만 남기고(오래된 것부터 자동 정리), 기록을 지우면 함께 지운다. */
+  const IDB = {
+    name: 'ink1_field_studio_db',
+    store: 'photos_by_result',
+    meta: 'results_meta',
+    ver: 1,
+    keep: 20,
+    maxBytes: 60 * 1024 * 1024
+  };
+  let idbPromise = null;
+
+  function idb() {
+    if (idbPromise) return idbPromise;
+    idbPromise = new Promise((resolve, reject) => {
+      if (!('indexedDB' in window) || !window.indexedDB) { reject(new Error('IndexedDB를 쓸 수 없습니다.')); return; }
+      let req;
+      try { req = indexedDB.open(IDB.name, IDB.ver); } catch (e) { reject(e); return; }
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains(IDB.store)) {
+          db.createObjectStore(IDB.store, { keyPath: 'id' }).createIndex('at', 'at', { unique: false });
+        }
+        if (!db.objectStoreNames.contains(IDB.meta)) {
+          db.createObjectStore(IDB.meta, { keyPath: 'id' }).createIndex('at', 'at', { unique: false });
+        }
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error || new Error('IndexedDB를 열지 못했습니다.'));
+      req.onblocked = () => reject(new Error('IndexedDB가 다른 창에 잠겨 있습니다.'));
+    }).catch((e) => { idbPromise = null; throw e; });
+    return idbPromise;
+  }
+
+  function idbTx(db, stores, mode) {
+    return db.transaction(stores, mode);
+  }
+
+  function dataUrlBytes(url) {
+    const s = String(url || '');
+    const i = s.indexOf(',');
+    return i < 0 ? 0 : Math.round((s.length - i - 1) * 3 / 4);
+  }
+
+  /* 앱 사진 → 보관용 레코드 (disp=가리기 반영본 · mini=목록 썸네일). AI용 800px은 복원할 때 다시 만든다 */
+  function photoRec(p) {
+    const disp = p.disp || p.ai || p.mini || '';
+    return {
+      id: p.id, name: p.name || 'photo.jpg', original: p.original || p.name || '',
+      takenAt: p.dateText || p.takenAt || '', dateKey: p.dateKey || null,
+      edited: !!p.edited, width: p.w || p.width || null, height: p.h || p.height || null,
+      bytes: p.bytes || dataUrlBytes(disp), disp: disp, mini: p.mini || ''
+    };
+  }
+
+  function photoFromRec(r) {
+    const disp = r.disp || r.mini || '';
+    return {
+      id: r.id || ('p' + Date.now() + '_' + Math.random().toString(36).slice(2, 6)),
+      name: r.name || r.original || 'photo.jpg',
+      dateKey: r.dateKey || null, dateText: r.takenAt || '',
+      disp: disp, ai: disp, mini: r.mini || disp,
+      w: r.width || null, h: r.height || null, edited: !!r.edited
+    };
+  }
+
+  /* 원고 사진 저장 — 결과 ID 하나에 사진 배열 통째로 */
+  async function photosSave(resultId, photos) {
+    if (!resultId) return 0;
+    const list = (photos || []).map(photoRec).filter((p) => p.disp);
+    try {
+      if (!list.length) { await photosDrop(resultId); return 0; }
+      const total = list.reduce((n, p) => n + (p.bytes || 0) + dataUrlBytes(p.mini), 0);
+      const db = await idb();
+      await new Promise((resolve, reject) => {
+        const tx = idbTx(db, [IDB.store, IDB.meta], 'readwrite');
+        tx.objectStore(IDB.store).put({ id: resultId, at: Date.now(), photos: list });
+        tx.objectStore(IDB.meta).put({ id: resultId, at: Date.now(), count: list.length, bytes: total });
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error || new Error('사진 저장 실패'));
+        tx.onabort = () => reject(tx.error || new Error('사진 저장 중단'));
+      });
+      await photosPrune();
+      return list.length;
+    } catch (e) { return 0; }
+  }
+
+  /* 최근 원고의 사진 불러오기 → 앱 사진 객체로 */
+  function photosGet(resultId) {
+    if (!resultId) return Promise.resolve([]);
+    return idb()
+      .then((db) => new Promise((resolve, reject) => {
+        const tx = idbTx(db, [IDB.store], 'readonly');
+        const rq = tx.objectStore(IDB.store).get(resultId);
+        rq.onsuccess = () => resolve((rq.result && rq.result.photos) || []);
+        rq.onerror = () => reject(rq.error || new Error('사진 조회 실패'));
+      }))
+      .then((list) => (list || []).map(photoFromRec).filter((p) => p.disp))
+      .catch(() => []);
+  }
+
+  function photosDrop(resultId) {
+    if (!resultId) return Promise.resolve();
+    return idb()
+      .then((db) => new Promise((resolve) => {
+        const tx = idbTx(db, [IDB.store, IDB.meta], 'readwrite');
+        tx.objectStore(IDB.store).delete(resultId);
+        tx.objectStore(IDB.meta).delete(resultId);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => resolve();
+        tx.onabort = () => resolve();
+      }))
+      .catch(() => {});
+  }
+
+  function photosClear() {
+    return idb()
+      .then((db) => new Promise((resolve) => {
+        const tx = idbTx(db, [IDB.store, IDB.meta], 'readwrite');
+        tx.objectStore(IDB.store).clear();
+        tx.objectStore(IDB.meta).clear();
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => resolve();
+        tx.onabort = () => resolve();
+      }))
+      .catch(() => {});
+  }
+
+  /* 용량 폭주 방지 — 최근 20건·60MB만 남기고 오래된 것부터 지운다(메타만 훑어서 가볍다) */
+  async function photosPrune() {
+    try {
+      const db = await idb();
+      const metas = await new Promise((resolve, reject) => {
+        const tx = idbTx(db, [IDB.meta], 'readonly');
+        const rq = tx.objectStore(IDB.meta).getAll();
+        rq.onsuccess = () => resolve(rq.result || []);
+        rq.onerror = () => reject(rq.error || new Error('메타 조회 실패'));
+      });
+      metas.sort((a, b) => (a.at || 0) - (b.at || 0));
+      let n = metas.length;
+      let bytes = metas.reduce((s, m) => s + (m.bytes || 0), 0);
+      const drop = [];
+      metas.forEach((m) => {
+        if (n <= IDB.keep && bytes <= IDB.maxBytes) return;
+        drop.push(m.id); n--; bytes -= (m.bytes || 0);
+      });
+      if (!drop.length) return 0;
+      await new Promise((resolve) => {
+        const tx = idbTx(db, [IDB.store, IDB.meta], 'readwrite');
+        drop.forEach((id) => { tx.objectStore(IDB.store).delete(id); tx.objectStore(IDB.meta).delete(id); });
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => resolve();
+        tx.onabort = () => resolve();
+      });
+      return drop.length;
+    } catch (e) { return 0; }
+  }
+
+  /* 저장된 원고 건수·용량(설정 화면 표시용) */
+  async function photosStat() {
+    try {
+      const db = await idb();
+      return await new Promise((resolve, reject) => {
+        const tx = idbTx(db, [IDB.meta], 'readonly');
+        const rq = tx.objectStore(IDB.meta).getAll();
+        rq.onsuccess = () => {
+          const list = rq.result || [];
+          resolve({ n: list.length, bytes: list.reduce((s, m) => s + (m.bytes || 0), 0) });
+        };
+        rq.onerror = () => reject(rq.error || new Error('메타 조회 실패'));
+      });
+    } catch (e) { return { n: 0, bytes: 0 }; }
   }
 
   function toast(msg, isErr) {
@@ -628,6 +808,7 @@
       const mini = await resize(edited, 260, 0.6);
       p.mini = mini.url;
       paintThumbs();
+      if (S.result) photosSave(S.result.id, S.photos);   // 가린 사진을 보관본에도 반영
       $('#mosaicSheet').classList.add('hidden');
       toast('가린 사진으로 바꿨습니다 · AI에도 가린 상태로 전달됩니다');
     });
@@ -1051,8 +1232,10 @@
     res.blogText = htmlToText(res.blogHtml);
     S.result = res;
     S.selTitle = 0;
+    S.restored = false;
     renderResult();
     saveToHistory(res);
+    photosSave(res.id, S.photos);      // 사진 전체는 IndexedDB에 (localStorage에는 thumb 1장만)
     go('result');
     toast('원고 완성 · ' + res.model + ' · ' + (res.tags.length) + '개 태그');
   }
@@ -1135,12 +1318,14 @@
         d.addEventListener('click', () => downloadDataUrl(p.disp, '현장사진_' + String(i + 1).padStart(2, '0') + '.jpg'));
         rt.appendChild(d);
       });
-      $('#resPhotoMeta').textContent = S.photos.length + '장 · 눌러서 저장';
+      $('#resPhotoMeta').textContent = S.restored
+        ? '📷 사진 ' + S.photos.length + '장 포함됨 · 눌러서 저장'
+        : S.photos.length + '장 · 눌러서 저장';
       $('#resPhotoCard').classList.remove('hidden');
     } else if (info) {
       $('#resPhotoCard').classList.add('hidden');
     } else {
-      rt.innerHTML = '<div class="muted" style="grid-column:1/-1">이 원고는 기록에서 열었습니다. 사진은 그때 쓰던 기기에만 남습니다.</div>';
+      rt.innerHTML = '<div class="muted" style="grid-column:1/-1">이 원고에는 사진이 없습니다. 사진은 원고를 만든 이 기기에 최근 20건까지 함께 보관됩니다.</div>';
       $('#resPhotoMeta').textContent = '';
       $('#resPhotoCard').classList.remove('hidden');
     }
@@ -2103,7 +2288,7 @@
     const photos = S.photos.slice();
     const total = photos.length;
     if (!total && r.mode === 'field' &&
-        !confirm('올릴 사진이 없습니다.\n기록에서 열면 사진은 그때 쓰던 기기에만 남습니다.\n사진 없이 원고만 보낼까요?')) {
+        !confirm('올릴 사진이 없습니다.\n이 원고를 만든 기기가 아니면 사진이 함께 열리지 않습니다.\n사진 없이 원고만 보낼까요?')) {
       if (btn) btn.disabled = false;
       return;
     }
@@ -2232,16 +2417,40 @@
           : '<div class="noimg">' + (h.mode && h.mode !== 'field' ? '📝' : '📷') + '</div>') +
         '<div class="t"><b>' + esc(h.titles[0] || '(제목 없음)') + '</b>' +
         '<span>' + stamp + ' · ' + esc(BRANDS[h.brand] ? BRANDS[h.brand].name : h.brand) + ' · ' +
-        esc(h.mode === 'topic' ? '정보성·지정' : h.mode === 'random' ? '정보성·랜덤' : h.type) + esc(pubBadge(h)) + '</span></div>' +
+        esc(h.mode === 'topic' ? '정보성·지정' : h.mode === 'random' ? '정보성·랜덤' : h.type) +
+        (h.photoCount ? ' · 사진 ' + h.photoCount + '장' : '') + esc(pubBadge(h)) + '</span></div>' +
         '<span class="badge">열기</span>';
-      d.addEventListener('click', () => {
-        S.result = h;
-        S.selTitle = 0;
-        renderResult();
-        go('result');
-      });
+      d.addEventListener('click', () => openHistory(h.id));
       list.appendChild(d);
     });
+  }
+
+  /* 최근 원고 [열기] — 원고 + 사진(IndexedDB)을 함께 되살린다.
+     사진이 없으면 예전처럼 원고만 연다(사진은 원고를 만든 기기에만 남기 때문). */
+  async function openHistory(id) {
+    const h = S.history.filter((x) => x && x.id === id)[0];
+    if (!h) return;
+    S.result = h;
+    S.selTitle = 0;
+    S.photos = [];
+    S.restored = false;
+    renderResult();
+    go('result');
+    const photos = await photosGet(id);
+    if (!photos.length) return;
+    // 보관하지 않은 AI용 800px은 복원하면서 다시 만든다(전송·분석은 이 값을 쓴다)
+    for (let i = 0; i < photos.length; i++) {
+      const p = photos[i];
+      try {
+        const ai = await resize(p.disp, 800, 0.72);
+        p.ai = ai.url;
+      } catch (e) { p.ai = p.disp; }
+    }
+    if (!S.result || S.result.id !== id || S.view !== 'result') return;   // 그 사이 다른 화면·원고로 갔으면 버린다
+    S.photos = photos;
+    S.restored = true;
+    renderResult();
+    toast('사진 ' + photos.length + '장을 원고와 함께 복원했습니다');
   }
 
   /* ───────────────────────── 설정 ───────────────────────── */
@@ -2259,6 +2468,11 @@
       Object.keys(localStorage).forEach((kk) => { bytes += (localStorage.getItem(kk) || '').length; });
     } catch (e) {}
     $('#lsUse').textContent = (bytes / 1024).toFixed(0) + 'KB / 약 5MB';
+    photosStat().then((st) => {
+      const el = $('#lsUse');
+      if (!el || !st.n) return;
+      el.textContent = (bytes / 1024).toFixed(0) + 'KB / 약 5MB · 사진 보관 ' + st.n + '건 ' + (st.bytes / 1048576).toFixed(1) + 'MB';
+    });
 
     // P2: Blogger·브릿지 설정
     $('#bgBlog').value = (store.get(LS.bgBlog) || '').trim();
@@ -2304,7 +2518,11 @@
 
   /* ───────────────────────── 이벤트 ───────────────────────── */
   function bind() {
-    $$('#tabs .tab').forEach((b) => b.addEventListener('click', () => go(b.dataset.v)));
+    $$('#tabs .tab').forEach((b) => b.addEventListener('click', () => {
+      if (b.dataset.v === 'write') paintThumbs();   // 사진 격자를 지금 상태와 맞춘다(숨은 사진 방지)
+      if (b.dataset.v === 'settings') paintSettings();   // 사진 보관 현황·발행 로그를 최신으로
+      go(b.dataset.v);
+    }));
     $('#goWrite').addEventListener('click', () => go('write'));
     $$('#modeTabs .modecard').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.m)));
     $('#topicInput').addEventListener('input', (e) => {
@@ -2334,6 +2552,7 @@
         if (b.dataset.act === 'del') {
           S.photos = S.photos.filter((p) => p.id !== b.dataset.id);
           paintThumbs();
+          if (S.result) photosSave(S.result.id, S.photos);   // 보관본에서도 빼기
         }
         return;
       }
@@ -2439,8 +2658,10 @@
     $('#goHist').addEventListener('click', () => go('home'));
     $('#discardBtn').addEventListener('click', () => {
       S.result = null;
+      S.restored = false;
       renderResult();
       go('write');
+      paintThumbs();
     });
 
     $('#bgSave').addEventListener('click', () => {
@@ -2518,11 +2739,12 @@
       toast('기록을 JSON으로 저장했습니다');
     });
     $('#clearHistBtn').addEventListener('click', () => {
-      if (!confirm('저장된 원고 기록을 모두 지울까요? 되돌릴 수 없습니다.')) return;
+      if (!confirm('저장된 원고 기록과 함께 보관한 사진도 지울까요? 되돌릴 수 없습니다.')) return;
       S.history = [];
       store.del(LS.hist);
+      photosClear();                      // IndexedDB 사진 보관소도 함께 비운다
       paintHome(); paintSettings();
-      toast('기록을 지웠습니다');
+      toast('기록과 사진을 지웠습니다');
     });
   }
 

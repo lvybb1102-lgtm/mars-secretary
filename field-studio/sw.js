@@ -1,7 +1,8 @@
 /* 잉크원_st_AI — 오프라인 껍데기 캐시 (네트워크 우선, 실패 시 캐시) + 공유받기(share_target) 수신
+   v6: 원고 사진을 IndexedDB(ink1_field_studio_db)에 보관 → 최근 원고 [열기] 때 사진까지 복원
    v5: 비공개 GitHub 큐 원클릭 바로발행(사진 → pack.json → ready.json) 반영
    범위는 ./ (field-studio) 안으로 한정한다. 상위 비서실 SW와 충돌하지 않게 자기 파일만 다룬다. */
-const CACHE = 'ink1-field-studio-v5';
+const CACHE = 'ink1-field-studio-v6';
 const SHARE = 'ink1-field-studio-share-v1';
 const ASSETS = ['./', './index.html', './style.css', './app.js', './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png'];

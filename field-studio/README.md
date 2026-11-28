@@ -1,4 +1,4 @@
-# 잉크원_st_AI (잉크원 필드 스튜디오) — v1.3 원클릭 바로발행 큐
+# 잉크원_st_AI (잉크원 필드 스튜디오) — v1.4 원고 사진 자동 보존
 
 현장 사진 + 한 줄 메모 → **제목 3안 · 네이버 블로그 본문(서식 HTML) · 스레드 · 15초 쇼츠 대본 · 인스타 캡션 · 해시태그**를 한 번에 만들고,
 **⚡ 비공개 GitHub 큐 바로발행 · 네이버 안전모드 · 구글 블로그(Blogger) API · 니케 발행팩 · 로컬 PC 브릿지** 5경로로 내보내는 모바일 퍼스트 PWA입니다.
@@ -8,6 +8,38 @@
 - 단독 파일: `downloads/잉크원_필드스튜디오_프로토타입.html` (PC·폰에서 파일로 열어도 동작 · `build_field_single.py`로 재생성)
 - 로컬 브릿지 샘플: `downloads/field_studio_bridge_sample.py`
 - 이 폴더는 `mars-secretary` 저장소의 하위 경로입니다. 같은 주소(lvybb1102-lgtm.github.io)라 **마르스 비서실에 저장한 Gemini 키를 그대로 가져올 수 있습니다**. (`설정 → 비서실 키 가져오기`)
+
+## v1.4 (2026-11-28) — 원고 사진 자동 보존 (IndexedDB)
+
+**증상**: 원고를 만들고 브라우저를 닫았다가 홈 **최근 원고 [열기]**로 다시 열면 사진이 0장이 되어,
+**[⚡ 니케에게 바로발행 전송]**에서 `사진 0장` 확인창이 떴습니다.
+**원인**: `localStorage`(약 5MB) 한도 때문에 기록(`ink1fs_history_v1`)에는 대표 `thumb` 1장만 넣고
+`S.photos` 전체(1~10장 · 가리기 반영본)는 저장하지 않았습니다.
+
+### 저장 구조
+
+| 저장소 | 무엇을 | 한도 |
+|---|---|---|
+| `localStorage` `ink1fs_history_v1` | 원고 본문·제목·태그 + 대표 썸네일 1장(약 13KB/건) | 최근 20건 |
+| **IndexedDB** `ink1_field_studio_db` → `photos_by_result` | 사진 배열 통째로(`disp` 1280px JPEG dataURL · `mini` 260px, `name`·`original`·`takenAt`·`edited`·`width`·`height`·`bytes`)를 **원고 ID 키**로 | 최근 20건 · 60MB |
+| **IndexedDB** 같은 DB → `results_meta` | `{id, at, count, bytes}` — 정리(prune)용 가벼운 메타 | 위와 동일 |
+
+- 저장 시점: **원고 생성 직후**, **모자이크(가리기) 저장**, **사진 삭제** 때마다 그 원고 ID로 다시 씁니다.
+- AI용 800px(`ai`)는 보관하지 않고 **복원할 때 원본에서 다시 만듭니다**(용량 절반, 화질 손실 없음).
+- `[열기]`(`openHistory(id)`) → `photos_by_result`에서 불러와 `S.photos` 복원 → 결과 화면에
+  **`📷 사진 N장 포함됨 · 눌러서 저장`** 표시, 홈 목록에도 `· 사진 N장` 표시. 그대로 바로발행 전송하면 사진이 함께 PUT 됩니다.
+- 사진이 없는 기기(다른 폰·시크릿 창)에서 열면 예전처럼 원고만 열리고 `사진 0장` 확인창이 뜹니다.
+- 정리: 최근 **20건 · 60MB**만 유지(넘으면 오래된 `at`부터 자동 삭제). 기록에서 밀려난 원고(`saveHistory`에서 pop)와
+  **기록 전체 삭제(설정)** 시 그 원고의 보관 사진도 함께 삭제됩니다. 설정 화면에 `사진 보관 N건 X.XMB` 표시.
+- `file://` 단독 HTML에서도 IndexedDB가 동작합니다(막힌 브라우저에서는 조용히 원고만 열림).
+
+### 검증
+
+- `python3 verify_v14_idb_photos.py` (로컬) / `python3 verify_v14_idb_photos.py <배포URL>` — **41항목**
+  저장 필드·복원·바로발행 사진 PUT·삭제 반영·20건 정리·기록 삭제 시 함께 삭제·SW v6·오류 0
+- `python3 verify_v13_gh_queue.py` — v1.3 회귀 **72항목** 통과(캐시 기대값만 v6로 수정)
+- `python3 verify_v12_cat_share.py` — v1.2 회귀 **62항목** 통과
+- `python3 check_single_idb.py` — 단독 HTML(`file://`) 스모크: 보관 2장 → 새로고침 → 복원 2장
 
 ## v1.3 (2026-11-28) — ⚡ 원클릭 바로발행 큐 (비공개 GitHub 저장소)
 
@@ -67,7 +99,7 @@ queue/{request_id}/ready.json                 ← 3) 완료 마커 — 이 파�
 
 ### 오프라인·단독 파일
 
-- `sw.js` 캐시 **v5**(`ink1-field-studio-v5`)로 올렸습니다.
+- `sw.js` 캐시 **v5**(`ink1-field-studio-v5`)로 올렸습니다. (v1.4에서 **v6**로 올림)
 - `downloads/잉크원_필드스튜디오_프로토타입.html`도 `python3 build_field_single.py`로 최신 소스와 맞춰 재생성했습니다(설정·결과 화면 포함, 파일로 열어도 GitHub 업로드 동작).
 
 ## v1.2 (2026-11-28) — 작업 카테고리 4종 · 사진 선택 3종 · 공유받기
