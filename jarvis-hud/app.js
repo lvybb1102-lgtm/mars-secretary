@@ -539,20 +539,94 @@
   }
 
   let ttsUnlocked = false;
+  let activeAudio = null;
+  let activeAudioUrl = null;
+  const SILENT_WAV = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+
   function unlockTTS() {
-    if (ttsUnlocked || !window.speechSynthesis) return;
+    if (ttsUnlocked) return;
     ttsUnlocked = true;
     try {
-      const u = new SpeechSynthesisUtterance('');
-      u.volume = 0;
-      u.lang = 'ko-KR';
-      speechSynthesis.speak(u);
+      const a = new Audio(SILENT_WAV);
+      a.volume = 0;
+      const p = a.play();
+      if (p && p.catch) p.catch(() => {});
     } catch (e) {}
+    if (window.speechSynthesis) {
+      try {
+        const u = new SpeechSynthesisUtterance('');
+        u.volume = 0;
+        u.lang = 'ko-KR';
+        speechSynthesis.speak(u);
+      } catch (e) {}
+    }
+  }
+
+  function pcmToWavUrl(b64, sampleRate) {
+    const bin = atob(b64);
+    const len = bin.length;
+    const buf = new ArrayBuffer(44 + len);
+    const view = new DataView(buf);
+    const writeStr = (off, s) => { for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i)); };
+    writeStr(0, 'RIFF');
+    view.setUint32(4, 36 + len, true);
+    writeStr(8, 'WAVE');
+    writeStr(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    writeStr(36, 'data');
+    view.setUint32(40, len, true);
+    const bytes = new Uint8Array(buf, 44);
+    for (let i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
+    return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+  }
+
+  async function fetchJarvisAudio(text) {
+    const key = apiKey();
+    if (!key) return null;
+    const clean = cleanForSpeech(text).slice(0, 450);
+    if (!clean) return null;
+    const res = await fetch(API + 'gemini-2.5-flash-preview-tts:generateContent?key=' + encodeURIComponent(key), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: clean }] }],
+        generationConfig: {
+          responseModalities: ['AUDIO'],
+          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Charon' } } }
+        }
+      })
+    });
+    if (!res.ok) return null;
+    const j = await res.json();
+    const parts = (j && j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts) || [];
+    for (const p of parts) {
+      if (p.inlineData && p.inlineData.data) {
+        const mime = p.inlineData.mimeType || '';
+        const m = mime.match(/rate=(\d+)/);
+        const rate = m ? Number(m[1]) : 24000;
+        return pcmToWavUrl(p.inlineData.data, rate);
+      }
+    }
+    return null;
   }
 
   function stopSpeak(silent) {
     tts.seq++;
     tts.speaking = false;
+    if (activeAudio) {
+      try { activeAudio.pause(); activeAudio.src = ''; } catch (e) {}
+      activeAudio = null;
+    }
+    if (activeAudioUrl) {
+      try { URL.revokeObjectURL(activeAudioUrl); } catch (e) {}
+      activeAudioUrl = null;
+    }
     if (window.speechSynthesis && speechSynthesis.speaking) {
       try { speechSynthesis.cancel(); } catch (e) {}
     }
@@ -578,16 +652,50 @@
     return out;
   }
 
-  function speak(text, onDone) {
-    if (cfg.tts === 'off' || !window.speechSynthesis) { if (onDone) onDone(); return; }
+  async function speak(text, onDone) {
+    if (cfg.tts === 'off') { if (onDone) onDone(); return; }
     const chunks = chunkText(text);
     if (!chunks.length) { if (onDone) onDone(); return; }
     const wasSpeaking = tts.speaking || (window.speechSynthesis && speechSynthesis.speaking);
     stopSpeak(true);
     const mySeq = ++tts.seq;
     tts.speaking = true;
-    tts.voice = pickVoice();
     if (state !== 'thinking') setState('speaking');
+
+    if (apiKey()) {
+      try {
+        const wavUrl = await fetchJarvisAudio(text);
+        if (mySeq !== tts.seq) { if (wavUrl) URL.revokeObjectURL(wavUrl); return; }
+        if (wavUrl) {
+          activeAudioUrl = wavUrl;
+          const a = new Audio(wavUrl);
+          activeAudio = a;
+          a.playbackRate = Math.max(0.7, Math.min(1.4, Number(cfg.rate) || 1));
+          a.onended = () => {
+            if (mySeq !== tts.seq) return;
+            tts.speaking = false;
+            if (state === 'speaking') setState('idle');
+            if (onDone) onDone();
+          };
+          a.onerror = () => {
+            if (mySeq !== tts.seq) return;
+            tts.speaking = false;
+            if (state === 'speaking') setState('idle');
+            if (onDone) onDone();
+          };
+          await a.play();
+          return;
+        }
+      } catch (e) {}
+    }
+
+    if (!window.speechSynthesis) {
+      tts.speaking = false;
+      if (state === 'speaking') setState('idle');
+      if (onDone) onDone();
+      return;
+    }
+    tts.voice = pickVoice();
     let i = 0;
     const next = () => {
       if (mySeq !== tts.seq) return;
