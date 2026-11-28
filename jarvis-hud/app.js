@@ -613,7 +613,8 @@
     recFinal = '';
     setState('listening');
     el.btnMic.setAttribute('aria-pressed', 'true');
-    startMicAnalyser();
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+    if (!isMobile || !SR) startMicAnalyser();
 
     if (!SR) {
       toast('이 브라우저는 음성 인식을 지원하지 않습니다. Chrome·Edge에서 마이크를 쓰거나 아래에 입력해 주세요.', 'warn');
