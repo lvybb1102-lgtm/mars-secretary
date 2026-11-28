@@ -1,4 +1,4 @@
-# 잉크원_st_AI (잉크원 필드 스튜디오) — P2 발행 어댑터
+# 잉크원_st_AI (잉크원 필드 스튜디오) — v1.2 카테고리·사진 선택
 
 현장 사진 + 한 줄 메모 → **제목 3안 · 네이버 블로그 본문(서식 HTML) · 스레드 · 15초 쇼츠 대본 · 인스타 캡션 · 해시태그**를 한 번에 만들고,
 **네이버 안전모드 · 구글 블로그(Blogger) API · 니케 발행팩 · 로컬 PC 브릿지** 4경로로 내보내는 모바일 퍼스트 PWA입니다.
@@ -8,6 +8,37 @@
 - 단독 파일: `downloads/잉크원_필드스튜디오_프로토타입.html` (PC·폰에서 파일로 열어도 동작)
 - 로컬 브릿지 샘플: `downloads/field_studio_bridge_sample.py`
 - 이 폴더는 `mars-secretary` 저장소의 하위 경로입니다. 같은 주소(lvybb1102-lgtm.github.io)라 **마르스 비서실에 저장한 Gemini 키를 그대로 가져올 수 있습니다**. (`설정 → 비서실 키 가져오기`)
+
+## v1.2 (2026-11-28) — 작업 카테고리 4종 · 사진 선택 3종 · 공유받기
+
+### 1) 설치 · 교체 · AS · 수리 — 4대 카테고리 카드
+
+쓰기 탭 **맨 위(1번)** 에 2×2 큰 카드로 놓았습니다. 고르면 그 아래 안내선이 바뀝니다.
+
+| 카테고리 | 전개 구조 |
+|---|---|
+| 🖨️ **설치** | 현장 환경 → 설치 장비 → 초기 세팅 → 테스트 출력 |
+| 🔄 **교체** | 기존 문제·노후 상태 → 교체 부품(드럼/롤러/헤드 등) → 교체 전후 비교 |
+| 🛠️ **AS** | 고객 접수 증상 → 원인 진단 → 현장 조치 → 재발 방지 팁 |
+| 🔧 **수리** | 고장 원인 정밀 점검 → 분해·수리 과정 → 테스트 정상 작동 확인 |
+
+- 기존 `정기점검 · 상담 · 견적 · 철수`는 카드 아래 **보조 칩**으로 유지(고르면 기존 결론→원인→조치→확인→FAQ 순서).
+- 프롬프트: 시스템 지침 끝에 `catRule(type)` 블록이 붙어 **소제목 구성까지** 카테고리별로 고정됩니다(`[작업 종류 — 교체 · 이 종류는 아래 전개 구조를 따른다]`). 결론 3줄·CTA는 그대로 두고 중간 전개만 바뀝니다.
+- 사용자 지시에도 `작업 종류: 교체 — 기존 문제·노후 상태 → 교체 부품 …` 줄이 들어갑니다.
+
+### 2) 사진 선택 3종 + 공유받기
+
+| 버튼 | 파일 입력 | 쓰는 곳 |
+|---|---|---|
+| 🖼️ **사진·앨범** | `accept="image/*" multiple` | 포토피커·갤러리 |
+| 📁 **폴더·드라이브** | `accept=".jpg,.jpeg,.png,.webp,.heic,.heif,.bmp,.gif" multiple` | 내 파일·Google Drive·OneDrive·SD카드 |
+| 📸 **바로 촬영** | `accept="image/*" capture="environment"` | 카메라 즉시 촬영 |
+
+- 폴더·드라이브용은 `image/*`를 **일부러 넣지 않았습니다.** `image/*`가 있으면 크롬이 다시 포토피커로 보내서 목적(드라이브·폴더 접근)이 사라집니다. 확장자만 지정해야 문서 선택기가 열립니다.
+- 사진 영역 아래 꿀팁: *"안드로이드에서 **최근 파일**만 뜨면 왼쪽 위 **≡ → 갤러리**를 누르거나, 갤러리 앨범에서 사진 선택 후 **[공유 → 잉크원_st_AI]**로 바로 보낼 수 있어요."*
+- **공유받기(share_target)**: `manifest.webmanifest`에 `share_target`(POST · multipart/form-data · files 필드 `files`, jpeg/png/webp/heic) → `sw.js`가 POST를 받아 Cache Storage(`ink1-field-studio-share-v1`)에 사진 10장까지 보관 → `303` 리다이렉트(`?shared=1&n=`) → 앱이 `./__share__/meta`·`./__share__/f0…`으로 꺼내 **사진 목록에 자동 추가**하고 공유한 글은 메모에 넣습니다. 꺼낸 뒤 공유함은 비웁니다.
+- `sw.js` 캐시 버전 **v3 → v4**(`ink1-field-studio-v4`). 기존 네트워크 우선·오프라인 폴백 그대로, 외부(Gemini) 요청은 건드리지 않습니다.
+- **설치된 PWA에는 한 번 반영이 늦을 수 있습니다.** 홈 화면 앱을 지우고 다시 추가하거나 Chrome에서 앱을 한 번 열어 두면 `share_target`이 등록됩니다. 안 보이면 재설치가 가장 확실합니다.
 
 ## P2 발행 어댑터 (2026-11-28 추가)
 
@@ -65,7 +96,7 @@ python3 downloads/field_studio_bridge_sample.py --host 0.0.0.0 --token ya29.… 
 |---|---|---|
 | 사진 | 1~10장, **EXIF 촬영시각 자동 정렬**, 1280px(보관)·800px(AI 입력) 두 벌 리사이즈 (정보성 모드에서는 선택) | `app.js` `exifFromJpeg` / `resize` |
 | 가리기 | 손가락·마우스로 **모자이크/블러 브러시**(굵기 조절·되돌리기). 적용하면 AI에도 가린 상태로 전달 | `openMosaic` / `dab` |
-| 입력 | 작업 종류 7칩(설치·AS/수리·정기점검·정보글·상담·견적·철수) + 브랜드 프리셋 3벌 + 한 줄 메모(음성 입력 지원) | `TYPES` / `BRANDS` |
+| 입력 | 작업 종류 **4대 카드(설치·교체·AS·수리)** + 보조 칩(정기점검·상담·견적·철수) + 브랜드 프리셋 3벌 + 한 줄 메모(음성 입력 지원) | `CATS` / `catRule` / `BRANDS` |
 | 생성 | **Gemini 실제 호출**(비전: 사진 inlineData). 시스템 프롬프트에 잉크원 지침 내장 | `SYS_INK` / `callModel` |
 | 결과 | 제목 3안 선택, 네이버 스마트에디터용 **서식 HTML 복사**(text/html+text/plain), 일반 텍스트·스레드·대본·캡션·태그 복사 | `copyRich` |
 | 저장 | 사진+원고 **ZIP 저장**, 원고 HTML 저장, 최근 원고 localStorage 기록(홈 목록) | `makeZip` / `saveToHistory` |
@@ -86,8 +117,8 @@ python3 downloads/field_studio_bridge_sample.py --host 0.0.0.0 --token ya29.… 
 | `index.html` | 화면 |
 | `style.css` | 스타일 |
 | `app.js` | 앱 로직(EXIF·모자이크·Gemini·ZIP·기록·P2 발행 어댑터) |
-| `manifest.webmanifest` | 홈 화면 추가(PWA) — name/short_name `잉크원_st_AI` |
-| `sw.js` | 오프라인 껍데기 캐시(`/field-studio` 범위만, **v3**) |
+| `manifest.webmanifest` | 홈 화면 추가(PWA) — name/short_name `잉크원_st_AI` · `share_target`(공유받기) |
+| `sw.js` | 오프라인 껍데기 캐시(`/field-studio` 범위만, **v4**) + 공유받기 POST 수신 |
 | `icon-*.png` | 앱 아이콘 |
 
 ## 키·보안
@@ -104,6 +135,7 @@ python3 downloads/field_studio_bridge_sample.py --host 0.0.0.0 --token ya29.… 
 - **정보성 모드 실측**(430×932, 사진 0장, gemini-3.6-flash): 랜덤 8.8~16.2초 · 지정 10~20.3초. 표본 본문 1,531~2,182자(대부분 1,800~2,100), 태그 8~10(10개 상한), 스레드 193~329자, 쇼츠 3줄·엔딩 멘트 고정.
 - **P2 발행 어댑터 검증**(430×932, 84항목 전부 통과): 채널 5종·상태 순환·URL 저장, 네이버 새 탭 URL/클립보드 `text/html`+`text/plain`, Blogger POST payload(`isDraft`, `Bearer`, `labels` 8, `status:draft`), 발행팩 마크다운/JSON, 브릿지 payload·/health, 발행 로그, 콘솔 0·가로 스크롤 0.
 - **브릿지 실동작**: `/health` 200, `/publish` → 원고 9종 + 사진 원본 저장, `type` 불일치 400, OPTIONS CORS/PNA 헤더 확인.
+- **v1.2 검증**(430×932, 로컬·배포 공용 스크립트 `verify_v12_cat_share.py`, 62항목 전부 통과): 4대 카드(182×83px) 순서·상단 배치, 카테고리별 프롬프트 4종(시스템·사용자 양쪽), 사진 선택 3종 input 속성·파일 선택기 연결, 꿀팁 문구, share_target 매니페스트·sw v4, **공유 POST → 303 → 사진 1장 자동 추가·메모 반영·공유함 비움**, 쓰기 3모드·P2 5채널·4경로 회귀, 가로 스크롤 0·콘솔 0.
 
 ## 다음 단계
 

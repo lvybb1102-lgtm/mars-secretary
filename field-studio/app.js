@@ -40,11 +40,35 @@
     }
   };
 
-  const TYPES = ['설치', 'AS/수리', '정기점검', '정보글', '상담', '견적', '철수'];
+  /* 현장 후기 4대 카테고리 — 고른 종류에 따라 글 전개 구조가 달라진다 */
+  const CATS = {
+    '설치': {
+      icon: '🖨️', sub: '환경·장비·세팅·시험출력',
+      flow: '현장 환경 → 설치 장비 → 초기 세팅 → 테스트 출력',
+      sections: '①결론 ②현장 환경(공간·전원·네트워크·용지) ③설치 장비와 구성 ④초기 세팅(드라이버·IP·스캔·팩스) ⑤테스트 출력 결과 ⑥자주 묻는 질문 ⑦CTA'
+    },
+    '교체': {
+      icon: '🔄', sub: '노후 진단·부품·전후 비교',
+      flow: '기존 문제·노후 상태 → 교체 부품(드럼/롤러/헤드 등) → 교체 전후 비교',
+      sections: '①결론 ②기존 문제와 노후 상태 ③교체한 부품(드럼·급지롤러·픽업롤러·정착기·헤드 등) ④교체 작업과 소요 ⑤교체 전후 비교 ⑥자주 묻는 질문 ⑦CTA'
+    },
+    'AS': {
+      icon: '🛠️', sub: '접수 증상·진단·조치',
+      flow: '고객 접수 증상 → 원인 진단 → 현장 조치 → 재발 방지 팁',
+      sections: '①결론 ②고객이 접수한 증상 ③원인 진단(어디를 어떤 순서로 확인했는지) ④현장 조치 ⑤재발 방지 팁 ⑥자주 묻는 질문 ⑦CTA'
+    },
+    '수리': {
+      icon: '🔧', sub: '정밀 점검·분해·작동 확인',
+      flow: '고장 원인 정밀 점검 → 분해·수리 과정 → 테스트 정상 작동 확인',
+      sections: '①결론 ②고장 원인 정밀 점검 ③분해·수리 과정 ④테스트 정상 작동 확인(출력·스캔·양면) ⑤같은 고장 예방 ⑥자주 묻는 질문 ⑦CTA'
+    }
+  };
+  const EXTRA_TYPES = ['정기점검', '상담', '견적', '철수'];
+  const TYPE_ALL = Object.keys(CATS).concat(EXTRA_TYPES);
 
   /* ────────────────── 쓰기 모드 (설치·AS / 정보성 지정 / 정보성 랜덤) ────────────────── */
   const MODES = {
-    field: { label: '설치·AS 후기', btn: '이 현장으로 만들기', hint: '현장 사진과 한 줄 메모로 설치·AS 후기 원고를 만듭니다.' },
+    field: { label: '설치·AS 후기', btn: '이 현장으로 만들기', hint: '작업 종류(설치·교체·AS·수리)를 고르면 사진과 메모가 그 구조로 전개됩니다.' },
     topic: { label: '정보성 지정 주제', btn: '이 주제로 만들기', hint: '주제를 하나 정하면 그 주제로 정보성 글을 씁니다. 사진이 없어도 됩니다.' },
     random: { label: '정보성 랜덤 주제', btn: '🎲 랜덤 주제로 만들기', hint: '주제를 비우면 AI가 최근 글과 겹치지 않는 새 주제를 골라 씁니다. [다른 주제 뽑기]로 주제만 먼저 정해도 됩니다.' }
   };
@@ -109,7 +133,7 @@
     mode: 'field',
     topic: '',
     pick: '',
-    type: 'AS/수리',
+    type: 'AS',
     photos: [],
     memo: '',
     result: null,
@@ -180,6 +204,50 @@
     if (S.mode === 'random') paintRecentTopics();
   }
 
+  /* 4대 카테고리 + 보조 칩 그림 */
+  function paintCats() {
+    const box = $('#cats');
+    if (!box) return;
+    box.innerHTML = '';
+    Object.keys(CATS).forEach((k) => {
+      const c = CATS[k];
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'cat' + (S.type === k ? ' on' : '');
+      b.dataset.c = k;
+      b.setAttribute('aria-pressed', S.type === k ? 'true' : 'false');
+      b.innerHTML = '<i>' + c.icon + '</i><b>' + k + '</b><span>' + c.sub + '</span>';
+      b.addEventListener('click', () => selectType(k));
+      box.appendChild(b);
+    });
+    const ex = $('#types');
+    ex.innerHTML = '';
+    EXTRA_TYPES.forEach((t) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chip' + (S.type === t ? ' on' : '');
+      b.textContent = t;
+      b.addEventListener('click', () => selectType(t));
+      ex.appendChild(b);
+    });
+    paintCatNote();
+  }
+
+  function selectType(t) {
+    S.type = t;
+    paintCats();
+    toast(CATS[t] ? t + ' — ' + CATS[t].flow : t + ' 작업으로 기록합니다');
+  }
+
+  function paintCatNote() {
+    const n = $('#catNote');
+    if (!n) return;
+    const c = CATS[S.type];
+    n.innerHTML = c
+      ? '<b>' + S.type + '</b> · ' + c.flow + ' 순서로 씁니다'
+      : '<b>' + S.type + '</b> · 기본 순서(결론→원인→조치→확인→FAQ)로 씁니다';
+  }
+
   /* ───────────────────────── 쓰기 모드 전환 ───────────────────────── */
   function setMode(m) {
     S.mode = MODES[m] ? m : 'field';
@@ -192,8 +260,8 @@
     $('#infoCard').classList.toggle('hidden', field);
     $('#memoCard').classList.toggle('hidden', S.mode === 'random');
 
-    $('#photoTitle').textContent = field ? '1. 사진' : '2. 사진 · 선택';
-    $('#memoTitle').textContent = field ? '2. 한 줄 메모' : '3. 메모 · 선택';
+    $('#photoTitle').textContent = field ? '2. 사진' : '2. 사진 · 선택';
+    $('#memoTitle').textContent = field ? '3. 한 줄 메모' : '3. 메모 · 선택';
     $('#memoSub').textContent = field ? '기종·증상·조치' : '넣고 싶은 내용';
     $('#memo').placeholder = field
       ? '예) 성서공단 사무실, 복합기 종이 걸림 수리. 급지롤러 교체하고 양면 20매 시험 출력까지.'
@@ -422,8 +490,11 @@
     add.className = 'addbox';
     add.id = 'addPhoto';
     add.innerHTML = '<b>＋</b>사진 추가';
-    add.addEventListener('click', () => $('#fileInput').click());
-    if (S.photos.length < 10) box.appendChild(add);
+    add.addEventListener('click', () => $('#pickGallery').click());
+    if (S.photos.length && S.photos.length < 10) box.appendChild(add);   // 남은 자리는 격자에서 바로 추가
+    $('#pickWrap').classList.toggle('hidden', false);
+    const full = S.photos.length >= 10;
+    $$('#pickGallery,#pickFiles,#pickCamera').forEach((b) => { b.disabled = full; });
     $('#photoMeta').textContent = S.photos.length + '/10장';
     const dated = S.photos.filter((p) => p.dateKey).length;
     const info = S.mode !== 'field';
@@ -667,11 +738,30 @@
 - 본문 순서: 결론(3줄) → 핵심·원인 → 방법·조치(단계별) → 체크리스트 → 자주 묻는 질문 2~3개. 분량 1,600~1,900자(1,900자 초과 금지), 소제목 4~6개, 태그 8~10개.
 - 제목 3안은 검색 키워드 중심 30자 안팎, 꼬리표 없음. 가격 숫자는 쓰지 않는다.`;
 
-  function systemFor(brand, mode) {
+  /* 작업 종류별 전개 구조 — 시스템 지침 뒤에 붙는다 */
+  function catRule(type) {
+    const c = CATS[type];
+    if (!c) {
+      return '\n\n[작업 종류 — ' + type + ']\n' +
+        '- 위 기본 순서(결론→원인→조치→확인→자주 묻는 질문→CTA)를 그대로 따른다.\n' +
+        '- 설치·교체·AS·수리 현장이 아니므로 그 네 종류의 전개 구조를 흉내내지 않는다.\n';
+    }
+    return '\n\n[작업 종류 — ' + type + ' · 이 종류는 아래 전개 구조를 따른다]\n' +
+      '- 글의 뼈대: ' + c.flow + '\n' +
+      '- 소제목 구성: ' + c.sections + '\n' +
+      '- 결론 3줄로 시작하고 CTA로 끝내는 것은 그대로다. 중간 전개만 위 구조로 바꾼다.\n' +
+      '- 다른 작업 종류(설치/교체/AS/수리)의 구조로 쓰지 않는다. ' + type + ' 현장에서 실제로 한 일과 확인한 것만 쓴다.\n' +
+      '- 사진·메모에 없는 부품명·수치·소요시간은 쓰지 않는다.\n';
+  }
+
+  function systemFor(brand, mode, type) {
     const info = mode && mode !== 'field';
-    if (brand === 'swo621') return info ? SYS_SWO + INFO_SWO : SYS_SWO;
-    if (brand === 'blogger') return info ? SYS_BLOG + INFO_BLOG : SYS_BLOG;
-    return info ? SYS_INK + INFO_INK : SYS_INK;
+    let sys;
+    if (brand === 'swo621') sys = info ? SYS_SWO + INFO_SWO : SYS_SWO;
+    else if (brand === 'blogger') sys = info ? SYS_BLOG + INFO_BLOG : SYS_BLOG;
+    else sys = info ? SYS_INK + INFO_INK : SYS_INK;
+    if (!info) sys += catRule(type || 'AS');
+    return sys;
   }
 
   function recentForPrompt(n) {
@@ -690,7 +780,7 @@
     const lines = [];
     const info = S.mode !== 'field';
     if (!info) {
-      lines.push('작업 종류: ' + S.type);
+      lines.push('작업 종류: ' + S.type + (CATS[S.type] ? ' — ' + CATS[S.type].flow : ''));
       if (S.memo.trim()) lines.push('현장 메모: ' + S.memo.trim());
       lines.push('사진 ' + S.photos.length + '장(촬영 순서대로). 사진에 보이는 것을 근거로 써라.');
       lines.push('브랜드: ' + b.label);
@@ -768,7 +858,7 @@
     const key = apiKey();
     const body = {
       contents: [{ role: 'user', parts }],
-      systemInstruction: { parts: [{ text: systemFor(S.brand, S.mode) }] },
+      systemInstruction: { parts: [{ text: systemFor(S.brand, S.mode, S.type) }] },
       generationConfig: {
         temperature: (S.mode && S.mode !== 'field') ? 0.6 : 1.0,
         maxOutputTokens: maxTokens || 8192,
@@ -1945,10 +2035,12 @@
       paintPick();
       toast('주제를 비웠습니다 · AI가 최근 글을 피해 새로 고릅니다');
     });
-    $('#addPhoto').addEventListener('click', () => $('#fileInput').click());
-    $('#fileInput').addEventListener('change', async (e) => {
-      await addPhotos(e.target.files);
-      e.target.value = '';
+    [['#pickGallery', '#fileInput'], ['#pickFiles', '#fileInputAll'], ['#pickCamera', '#cameraInput']].forEach((pair) => {
+      $(pair[0]).addEventListener('click', () => $(pair[1]).click());
+      $(pair[1]).addEventListener('change', async (e) => {
+        await addPhotos(e.target.files);
+        e.target.value = '';
+      });
     });
     $('#thumbs').addEventListener('click', (e) => {
       const b = e.target.closest('button[data-act]');
@@ -1969,17 +2061,7 @@
     });
     $('#memo').addEventListener('input', (e) => { S.memo = e.target.value; });
 
-    const types = $('#types');
-    TYPES.forEach((t) => {
-      const b = document.createElement('button');
-      b.className = 'chip' + (t === S.type ? ' on' : '');
-      b.textContent = t;
-      b.addEventListener('click', () => {
-        S.type = t;
-        $$('#types .chip').forEach((x) => x.classList.toggle('on', x.textContent === t));
-      });
-      types.appendChild(b);
-    });
+    paintCats();
 
     $('#brandBtn').addEventListener('click', () => {
       const opts = Object.keys(BRANDS).map((k) => BRANDS[k]);
@@ -2166,6 +2248,64 @@
     wrap.addEventListener('click', (e) => { if (e.target === wrap) wrap.remove(); });
   }
 
+  /* ───────────────────── 공유받기 (share_target → sw.js) ───────────────────── */
+  async function takeShared() {
+    const q = new URLSearchParams(location.search);
+    const flag = q.has('share-target') || q.get('shared') === '1' || q.has('n');
+    if (!flag) return false;
+    try { history.replaceState(null, '', location.pathname); } catch (e) {}
+    const base = new URL('./__share__/', location.href).href;
+    let meta = null;
+    if ('serviceWorker' in navigator) {
+      try {
+        await navigator.serviceWorker.ready;
+        const r = await fetch(base + 'meta', { cache: 'no-store' });
+        if (r.ok) meta = await r.json();
+      } catch (e) {}
+    }
+    if (!meta || !meta.count) {
+      const t = String(q.get('text') || '').trim();
+      if (t) {
+        S.memo = t.slice(0, 300);
+        $('#memo').value = S.memo;
+        setMode('field');
+        go('write');
+        toast('공유받은 글을 메모에 넣었습니다');
+        return true;
+      }
+      toast('공유받은 사진을 찾지 못했습니다. 앱을 한 번 새로 고친 뒤 갤러리에서 다시 공유해 주세요.', true);
+      return false;
+    }
+    const files = [];
+    for (let i = 0; i < meta.count; i++) {
+      try {
+        const r = await fetch(base + 'f' + i, { cache: 'no-store' });
+        if (!r.ok) continue;
+        const blob = await r.blob();
+        let name = '';
+        try { name = decodeURIComponent(r.headers.get('x-ink1-name') || ''); } catch (e) {}
+        files.push(new File([blob], name || ('공유사진_' + (i + 1) + '.jpg'), { type: blob.type || 'image/jpeg' }));
+      } catch (e) {}
+    }
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      if (reg.active) reg.active.postMessage({ type: 'ink1-share-clear' });
+    } catch (e) {}
+    setMode('field');
+    go('write');
+    if (meta.text && !S.memo.trim()) {
+      S.memo = String(meta.text).slice(0, 300);
+      $('#memo').value = S.memo;
+    }
+    if (!files.length) {
+      toast('공유받은 사진을 읽지 못했습니다. [사진·앨범]으로 다시 골라 주세요.', true);
+      return true;
+    }
+    await addPhotos(files);
+    toast('공유받은 사진 ' + files.length + '장 · 확인하고 [만들기]를 누르세요');
+    return true;
+  }
+
   /* ───────────────────────── 시작 ───────────────────────── */
   function init() {
     loadCfg();
@@ -2183,8 +2323,10 @@
       if (mars) { $('#homeHint').innerHTML = '마르스 비서실 키를 찾았습니다. <b>설정 → 비서실 키 가져오기</b>를 누르면 바로 쓸 수 있습니다.'; }
       else $('#homeHint').textContent = '설정에서 Google AI Studio 키를 넣으면 바로 동작합니다.';
     }
-    if ('serviceWorker' in navigator && location.protocol === 'https:') {
-      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    if ('serviceWorker' in navigator && (location.protocol === 'https:' || /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname))) {
+      navigator.serviceWorker.register('./sw.js').catch(() => {}).finally(() => { takeShared(); });
+    } else {
+      takeShared();
     }
   }
 
