@@ -211,7 +211,16 @@
 
         <div class="card p2" id="p2Card">
           <h3>🚀 P2 발행 어댑터 <span class="tiny" id="p2Sum">–</span></h3>
-          <div class="tiny" style="margin:-2px 0 8px">보낼 채널을 고르고, 상태를 눌러 기록하세요(대기 → 임시저장 → 발행요청 → 발행완료).</div>
+          <button class="btn" id="ghSend">⚡ 니케에게 바로발행 전송 (사진+원고)</button>
+          <div class="tiny" id="ghState" style="margin-top:7px">비공개 큐 미설정 · 설정(⚙)에서 GitHub 토큰(PAT)을 넣으면 이 버튼으로 사진+원고가 바로 넘어갑니다.</div>
+          <div class="ghprog hidden" id="ghProgWrap">
+            <div class="bar"><i id="ghBar"></i></div>
+            <div class="tiny" id="ghProg"></div>
+          </div>
+          <div class="tiny" id="ghOut" style="margin-top:7px;line-height:1.6"></div>
+
+          <div class="hr"></div>
+          <div class="tiny" style="margin:-2px 0 8px">아래는 채널별 수동 경로입니다. 보낼 채널을 고르고, 상태를 눌러 기록하세요(대기 → 임시저장 → 발행요청 → 발행완료).</div>
           <div id="chList"></div>
 
           <div class="hr"></div>
@@ -245,7 +254,8 @@
         <div class="approve">
           <b>승인 — 실제 게시는 마지막 버튼에서</b>
           <div class="muted" style="margin-top:4px">
-            원고는 이 기기 안에서만 만들어졌습니다. 위 4가지 경로 중 <b>누르는 순간</b> 전송·게시가 일어납니다.
+            원고는 이 기기 안에서만 만들어졌습니다. 위 경로 중 <b>누르는 순간</b> 전송·게시가 일어납니다.
+            맨 위 <b>⚡ 바로발행</b>은 비공개 저장소 큐에 사진까지 올리고, 니케가 5분 안에 발행을 마칩니다.
             네이버는 글쓰기 창을 열어 붙여넣기까지만 하고, Blogger는 <b>임시저장(draft)</b>이 기본입니다.
             유튜브·인스타·스레드는 대본·캡션 복사와 니케 위임으로 처리합니다.
           </div>
@@ -273,6 +283,24 @@
         <div class="muted" style="margin-top:8px">
           키는 <b>이 브라우저(localStorage)에만</b> 저장되고 어디로도 보내지 않습니다. GitHub 저장소에는 들어가지 않습니다.
           마르스 비서실과 같은 주소(lvybb1102-lgtm.github.io)라 비서실에 넣은 키를 그대로 가져올 수 있습니다.
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>⚡ 원클릭 바로발행 큐 (GitHub) <span class="badge off" id="ghBadge">미설정</span></h3>
+        <div class="tiny" style="margin:-2px 0 9px">결과 화면의 <b>[⚡ 니케에게 바로발행 전송]</b>을 누르면 사진과 원고가 이 <b>비공개 저장소</b> 큐로 올라가고, 니케가 5분 안에 5채널 발행을 마칩니다.</div>
+        <label class="f" for="ghRepo">저장소 (owner/repo)</label>
+        <input type="text" id="ghRepo" placeholder="lvybb1102-lgtm/ink1-publish-queue" autocomplete="off" spellcheck="false" enterkeyhint="done">
+        <label class="f" for="ghToken" style="margin-top:9px">GitHub 토큰 (PAT)</label>
+        <input type="password" id="ghToken" placeholder="github_pat_… 또는 ghp_…" autocomplete="off" spellcheck="false">
+        <div class="row" style="margin-top:9px">
+          <button class="btn ghost small" id="ghSave" style="width:auto">저장</button>
+          <button class="btn ghost small" id="ghTest" style="width:auto">연결 테스트</button>
+        </div>
+        <div class="tiny" id="ghTestOut" style="margin-top:6px">저장소와 토큰을 넣고 [연결 테스트]를 누르면 바로 확인합니다.</div>
+        <div class="muted" style="margin-top:8px">
+          토큰은 <b>이 브라우저(localStorage)에만</b> 저장되고 GitHub 업로드에만 씁니다. 권한은 그 저장소의 <b>Contents: Read and write</b> 하나면 됩니다.
+          올리는 순서는 <b>사진 → pack.json → ready.json</b>이라, 도중에 끊긴 건은 니케가 집지 않습니다.
         </div>
       </div>
 
@@ -350,10 +378,10 @@
       <div class="card">
         <h3>이 앱</h3>
         <div class="muted">
-          잉크원_st_AI <b>v1.2 (카테고리·사진 선택)</b> · 2026-11-28<br>
+          잉크원_st_AI <b>v1.3 (원클릭 바로발행 큐)</b> · 2026-11-28<br>
           현장 후기에서 <b>설치 · 교체 · AS · 수리</b>를 고르면 글이 그 구조로 전개되고,
           사진은 <b>사진·앨범 / 폴더·드라이브 / 바로 촬영</b> 3가지로 넣습니다. 갤러리에서 <b>[공유 → 잉크원_st_AI]</b>로도 바로 받습니다.<br>
-          현장 입력 → Gemini 생성 → 복사·저장에 이어, <b>네이버 안전모드 · Blogger API · 니케 발행팩 · 로컬 PC 브릿지</b> 4경로로 내보냅니다.
+          현장 입력 → Gemini 생성 → 복사·저장에 이어, <b>⚡ 비공개 GitHub 큐 바로발행</b> · 네이버 안전모드 · Blogger API · 니케 발행팩 · 로컬 PC 브릿지로 내보냅니다.
         </div>
       </div>
     </section>

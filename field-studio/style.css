@@ -254,3 +254,11 @@ input[type=range]{width:100%;accent-color:#0f7a5a}
 .logrow b{font-weight:800;color:#0b4d36;font-size:12.5px}
 .logrow .lg{font-size:11px;color:var(--muted);white-space:nowrap}
 .logrow .lu{grid-column:1/-1;font-size:11px;color:#1b5a94;word-break:break-all}
+
+/* ── 원클릭 바로발행 큐 (GitHub) ── */
+.ghprog{margin:9px 0 0}
+.ghprog .bar{height:6px;border-radius:999px;background:#e6efea;overflow:hidden}
+.ghprog .bar i{display:block;height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,#12a06f,#0f7a5a);transition:width .25s}
+.ghprog .tiny{margin-top:5px}
+#ghOut a{color:#1b5a94;font-weight:700;word-break:break-all}
+#ghState b{color:#0b4d36}

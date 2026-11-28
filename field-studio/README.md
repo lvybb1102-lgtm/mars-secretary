@@ -1,13 +1,74 @@
-# 잉크원_st_AI (잉크원 필드 스튜디오) — v1.2 카테고리·사진 선택
+# 잉크원_st_AI (잉크원 필드 스튜디오) — v1.3 원클릭 바로발행 큐
 
 현장 사진 + 한 줄 메모 → **제목 3안 · 네이버 블로그 본문(서식 HTML) · 스레드 · 15초 쇼츠 대본 · 인스타 캡션 · 해시태그**를 한 번에 만들고,
-**네이버 안전모드 · 구글 블로그(Blogger) API · 니케 발행팩 · 로컬 PC 브릿지** 4경로로 내보내는 모바일 퍼스트 PWA입니다.
+**⚡ 비공개 GitHub 큐 바로발행 · 네이버 안전모드 · 구글 블로그(Blogger) API · 니케 발행팩 · 로컬 PC 브릿지** 5경로로 내보내는 모바일 퍼스트 PWA입니다.
 
 - 앱 이름: **잉크원_st_AI** (2026-11-28 마르스 님 지정) · 경로는 `/field-studio/` 그대로
 - 접속: **https://lvybb1102-lgtm.github.io/mars-secretary/field-studio/**
-- 단독 파일: `downloads/잉크원_필드스튜디오_프로토타입.html` (PC·폰에서 파일로 열어도 동작)
+- 단독 파일: `downloads/잉크원_필드스튜디오_프로토타입.html` (PC·폰에서 파일로 열어도 동작 · `build_field_single.py`로 재생성)
 - 로컬 브릿지 샘플: `downloads/field_studio_bridge_sample.py`
 - 이 폴더는 `mars-secretary` 저장소의 하위 경로입니다. 같은 주소(lvybb1102-lgtm.github.io)라 **마르스 비서실에 저장한 Gemini 키를 그대로 가져올 수 있습니다**. (`설정 → 비서실 키 가져오기`)
+
+## v1.3 (2026-11-28) — ⚡ 원클릭 바로발행 큐 (비공개 GitHub 저장소)
+
+발행팩 복사는 **텍스트만** 가서 사진이 빠졌습니다. 그 구멍을 메우는 경로입니다.
+결과 화면 **「🚀 P2 발행 어댑터」 맨 위 주 버튼**을 한 번 누르면 **사진(가리기 반영) + 원고 + 채널 설정**이 비공개 저장소 큐로 올라가고, 니케가 그 큐를 보고 5채널 발행을 진행합니다.
+
+### 설정(⚙) → 「⚡ 원클릭 바로발행 큐 (GitHub)」
+
+| 항목 | 내용 |
+|---|---|
+| 저장소 (owner/repo) | placeholder `lvybb1102-lgtm/ink1-publish-queue` · `localStorage` 키 **`ink1fs_gh_repo_v1`** |
+| GitHub 토큰 (PAT) | `type=password` · `localStorage` 키 **`ink1fs_gh_token_v1`** · 권한은 그 저장소의 **Contents: Read and write** 하나 |
+| [연결 테스트] | `GET https://api.github.com/repos/{owner}/{repo}` → `private` 여부 · `permissions.push` 확인, 배지 `연결됨 / 읽기만 / 미연결`, 실패 시 401·403·404별 안내 문구 |
+
+토큰은 **브라우저 localStorage에만** 두고 GitHub API 업로드에만 씁니다. 코드·저장소에는 들어가지 않습니다.
+
+### 업로드 경로 규약 (순서가 핵심)
+
+감시 스크립트가 **미완성 건을 집지 않도록** 완료 표시를 맨 마지막에 올립니다.
+
+```
+queue/{request_id}/photos/01_원본이름.jpg     ← 1) 사진부터 순차 업로드 (base64, 가리기 반영 1280px)
+queue/{request_id}/photos/02_…
+queue/{request_id}/pack.json                  ← 2) 원고·채널·설정 메타 (사진은 경로만 참조, base64 없음)
+queue/{request_id}/ready.json                 ← 3) 완료 마커 — 이 파일이 있어야 감시가 집는다
+```
+
+- `request_id` 형식: `ink1_YYYYMMDD_HHMMSS_xxxx`(초 단위 + 랜덤 4자). 같은 ID 폴더가 이미 있으면 `-2`, `-3` 접미사를 붙여 충돌을 피합니다(`GET contents/queue/{id}`로 확인).
+- `PUT /repos/{owner}/{repo}/contents/{path}` · 커밋 메시지 `ink1 queue {request_id} · 사진 1/5` 처럼 단계가 남습니다. 같은 경로가 이미 있으면 `422` → `sha` 조회 후 덮어쓰기로 자동 재시도합니다.
+- **`ready.json` (정확히 이 7개 키)**
+
+```json
+{
+  "request_id": "ink1_20261128_121256_h9o",
+  "title": "복합기 양면 인쇄만 걸림, 급지롤러 교체로 해결 /아싸렌탈수원지사",
+  "brand": "ink1",
+  "channels": ["naver", "blogger", "youtube", "instagram", "threads"],
+  "photo_count": 3,
+  "created_at": "2026-11-28T03:12:56.000Z",
+  "status": "pending"
+}
+```
+
+- **`pack.json`**: 기존 `buildPack()` 산출물 그대로(제목 3안·본문 HTML/텍스트·태그·스레드·쇼츠·인스타·유튜브·채널 상태·지킬 것)에 아래를 더합니다.
+  - `requestId` = 큐 요청 ID(앱 기록 ID는 `appResultId`로 보존)
+  - `photos[]` = `{index, name, original, path, takenAt, edited, bytes, width, height}` — **base64 없음** (사진은 `path` 참조)
+  - `queue` = `{request_id, repo, base_path, photos_dir, pack_path, ready_path, order, watcher}` — 감시 스크립트가 바로 읽을 수 있게 경로를 명시
+- 진행 표시: `사진 1/3 올리는 중…` → `사진 3/3 올리는 중…` → `원고 올리는 중…` → `완료! 5분 안에 니케가 자동 발행합니다` (진행 바 + 결과 줄에 요청 ID·GitHub 링크)
+- 성공하면 채널 상태가 `대기 → 발행요청`으로 바뀌고, **발행 로그에 `⚡ GitHub 큐`** 항목이 남습니다. 이미 보낸 원고는 다시 누를 때 확인창으로 한 번 막습니다(중복 발행 방지).
+- 실패(토큰 없음·403·404·네트워크)는 버튼 옆에 그대로 안내하고, **ready.json을 올리지 않으므로** 반쯤 올라간 건은 감시가 집지 않습니다. 토큰이 없으면 업로드 시도 자체를 하지 않습니다.
+
+### 니케 쪽(감시) 규약
+
+- `ready.json`이 있는 `queue/{request_id}/`만 처리 대상. `status: pending` → 처리 후 `published`/`error`로 바꾸거나 `done.json`을 남기는 방식은 감시 스크립트 몫입니다.
+- 사진은 `queue/{request_id}/photos/` 아래 실제 파일이므로, 발행 시 사진 업로드가 필요한 채널(네이버·인스타·유튜브)은 이 파일을 그대로 쓰면 됩니다.
+- 같은 요청을 두 번 처리하지 않도록 `ready.json`의 `request_id`로 중복을 막습니다.
+
+### 오프라인·단독 파일
+
+- `sw.js` 캐시 **v5**(`ink1-field-studio-v5`)로 올렸습니다.
+- `downloads/잉크원_필드스튜디오_프로토타입.html`도 `python3 build_field_single.py`로 최신 소스와 맞춰 재생성했습니다(설정·결과 화면 포함, 파일로 열어도 GitHub 업로드 동작).
 
 ## v1.2 (2026-11-28) — 작업 카테고리 4종 · 사진 선택 3종 · 공유받기
 
@@ -40,9 +101,9 @@
 - `sw.js` 캐시 버전 **v3 → v4**(`ink1-field-studio-v4`). 기존 네트워크 우선·오프라인 폴백 그대로, 외부(Gemini) 요청은 건드리지 않습니다.
 - **설치된 PWA에는 한 번 반영이 늦을 수 있습니다.** 홈 화면 앱을 지우고 다시 추가하거나 Chrome에서 앱을 한 번 열어 두면 `share_target`이 등록됩니다. 안 보이면 재설치가 가장 확실합니다.
 
-## P2 발행 어댑터 (2026-11-28 추가)
+## P2 발행 어댑터 (2026-11-28 추가 / v1.3에서 바로발행 큐 추가)
 
-결과 화면 아래 **「🚀 P2 발행 어댑터」** 카드에서 4경로로 내보냅니다.
+결과 화면 아래 **「🚀 P2 발행 어댑터」** 카드에서 내보냅니다. 맨 위 주 버튼이 **⚡ 비공개 GitHub 큐 바로발행**(위 v1.3 항목)입니다.
 
 | 경로 | 버튼 | 실제 동작 |
 |---|---|---|
@@ -118,7 +179,7 @@ python3 downloads/field_studio_bridge_sample.py --host 0.0.0.0 --token ya29.… 
 | `style.css` | 스타일 |
 | `app.js` | 앱 로직(EXIF·모자이크·Gemini·ZIP·기록·P2 발행 어댑터) |
 | `manifest.webmanifest` | 홈 화면 추가(PWA) — name/short_name `잉크원_st_AI` · `share_target`(공유받기) |
-| `sw.js` | 오프라인 껍데기 캐시(`/field-studio` 범위만, **v4**) + 공유받기 POST 수신 |
+| `sw.js` | 오프라인 껍데기 캐시(`/field-studio` 범위만, **v5**) + 공유받기 POST 수신 |
 | `icon-*.png` | 앱 아이콘 |
 
 ## 키·보안

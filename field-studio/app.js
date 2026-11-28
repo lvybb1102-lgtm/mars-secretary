@@ -15,6 +15,8 @@
     bgBlog: 'ink1fs_blogger_blog_v1',
     bgToken: 'ink1fs_blogger_token_v1',
     bridge: 'ink1fs_bridge_url_v1',
+    ghRepo: 'ink1fs_gh_repo_v1',
+    ghToken: 'ink1fs_gh_token_v1',
     mars: 'mars_secretary_mobile_gemini_v1',
     marsOa: 'mars_secretary_mobile_openai_v1'
   };
@@ -1155,6 +1157,9 @@
     if (bOut) bOut.textContent = '';
     const rOut = $('#bridgeOut');
     if (rOut) rOut.textContent = '';
+    const gOut = $('#ghOut');
+    if (gOut) gOut.textContent = '';
+    ghProg('', 0);
   }
 
   function esc(s) {
@@ -1402,6 +1407,7 @@
   }
 
   function chLabel(id) {
+    if (id === 'gh') return '⚡ GitHub 큐';
     const c = CHANNELS.filter((x) => x.id === id)[0];
     return c ? c.name : id;
   }
@@ -1510,6 +1516,14 @@
 
     const bu = bridgeUrl();
     $('#bridgeState').textContent = bu ? '연결 설정됨 · ' + bu : 'URL 미설정 · 설정(⚙)에서 브릿지 주소를 넣으세요.';
+
+    const gs = $('#ghState');
+    if (gs) {
+      const gc = ghCfg();
+      if (!gc.owner) gs.innerHTML = '<b>저장소 주소 확인</b> · 설정(⚙)에서 owner/repo 형식으로 넣어 주세요.';
+      else if (!gc.token) gs.innerHTML = '<b>비공개 큐 미설정</b> · 설정(⚙)에서 GitHub 토큰(PAT)을 넣으면 이 버튼으로 사진+원고가 바로 넘어갑니다.';
+      else gs.innerHTML = '큐 <b>' + esc(gc.repo) + '</b> · 사진 ' + S.photos.length + '장 + 원고를 올리고 니케가 5분 안에 발행합니다.';
+    }
   }
 
   /* ── 발행 로그(설정 화면) ── */
@@ -1907,6 +1921,264 @@
     }
   }
 
+  /* ── (E) 원클릭 바로발행 큐 (비공개 GitHub 저장소) ──
+     사진 → pack.json → ready.json 순서로 올린다. 감시 스크립트는 ready.json 이 있는 건만 집는다.
+     pack.json 에는 사진 base64 를 넣지 않고 경로만 참조한다(중복 용량 방지). */
+  const GH_API = 'https://api.github.com';
+  const GH_DEFAULT = 'lvybb1102-lgtm/ink1-publish-queue';
+
+  function ghCfg() {
+    const raw = (store.get(LS.ghRepo) || '').trim();
+    const repo = raw || GH_DEFAULT;
+    const m = repo.match(/^(?:https?:\/\/github\.com\/)?([A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?)\/([A-Za-z0-9._-]+?)(?:\.git)?\/?$/);
+    return {
+      raw: raw, repo: m ? m[1] + '/' + m[2] : repo,
+      owner: m ? m[1] : '', name: m ? m[2] : '',
+      token: (store.get(LS.ghToken) || '').trim()
+    };
+  }
+
+  function ghReady(c) { return !!(c.owner && c.name && c.token); }
+
+  function ghHeaders(c) {
+    const h = { 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' };
+    if (c.token) h.Authorization = 'Bearer ' + c.token;
+    return h;
+  }
+
+  function ghPath(p) {
+    return String(p || '').split('/').map((s) => encodeURIComponent(s)).join('/');
+  }
+
+  function ghContents(c, path) {
+    return GH_API + '/repos/' + encodeURIComponent(c.owner) + '/' + encodeURIComponent(c.name) + '/contents/' + ghPath(path);
+  }
+
+  function ghErr(status, j) {
+    const msg = (j && j.message) || '';
+    if (status === 401) return '토큰이 올바르지 않거나 만료됐습니다 · 새 토큰을 발급해 다시 넣어 주세요.';
+    if (status === 403 && /rate limit/i.test(msg)) return 'GitHub 호출 한도를 넘었습니다 · 잠시 뒤 다시 시도해 주세요.';
+    if (status === 403) return '권한이 없습니다 · 토큰에 그 저장소의 Contents: Read and write 권한을 주세요.';
+    if (status === 404) return '저장소를 찾을 수 없습니다 · 이름(owner/repo)과 토큰에 그 저장소가 선택됐는지 확인해 주세요.';
+    if (status === 409 || status === 422) return '같은 경로에 파일이 이미 있습니다 · 다시 눌러 주세요(자동으로 덮어씁니다).';
+    return 'GitHub 응답 오류(' + status + ')' + (msg ? ': ' + msg : '');
+  }
+
+  async function ghGet(c, path) {
+    const res = await fetch(ghContents(c, path), { headers: ghHeaders(c), cache: 'no-store' });
+    const raw = await res.text();
+    let j = {};
+    try { j = JSON.parse(raw); } catch (e) {}
+    return { ok: res.ok, status: res.status, json: j };
+  }
+
+  function u8ToB64(u8) {
+    let s = '';
+    const CH = 0x8000;
+    for (let i = 0; i < u8.length; i += CH) s += String.fromCharCode.apply(null, u8.subarray(i, i + CH));
+    return btoa(s);
+  }
+  function strToU8(s) { return new TextEncoder().encode(String(s)); }
+
+  async function ghPut(c, path, bytes, message) {
+    const url = ghContents(c, path);
+    const body = { message: message, content: u8ToB64(bytes) };
+    const send = () => fetch(url, {
+      method: 'PUT',
+      headers: Object.assign({ 'Content-Type': 'application/json' }, ghHeaders(c)),
+      body: JSON.stringify(body)
+    });
+    let res = await send();
+    if (res.status === 409 || res.status === 422) {          // 이미 있는 파일 → sha 붙여 덮어쓰기
+      const cur = await ghGet(c, path);
+      if (cur.ok && cur.json && cur.json.sha) { body.sha = cur.json.sha; res = await send(); }
+    }
+    const raw = await res.text();
+    let j = {};
+    try { j = JSON.parse(raw); } catch (e) {}
+    if (!res.ok) throw new Error(ghErr(res.status, j));
+    return j;
+  }
+
+  /* 파일명은 경로에 안전하게: 원래 이름 살리고 확장자만 검사 */
+  function safeFileName(name, i) {
+    let n = String(name || '').replace(/^.*[\\/]/, '');
+    const m = n.match(/\.([A-Za-z0-9]{2,5})$/);
+    const ext0 = (m ? m[1] : 'jpg').toLowerCase();
+    const ext = /^(jpg|jpeg|png|webp|gif|bmp|heic|heif)$/.test(ext0) ? ext0 : 'jpg';
+    let base = n.replace(/\.[^.]+$/, '').replace(/[^0-9A-Za-z가-힣_-]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 40);
+    if (!base) base = 'photo' + i;
+    return base + '.' + (ext === 'jpeg' ? 'jpg' : ext);
+  }
+
+  /* 요청 ID — 같은 초에 두 번 보내도 겹치지 않게 */
+  function newRid() {
+    const d = new Date();
+    const p = (n) => String(n).padStart(2, '0');
+    const rnd = Math.random().toString(36).slice(2, 6);
+    return 'ink1_' + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '_' + p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds()) + '_' + rnd;
+  }
+
+  async function uniqueRid(c) {
+    const base = newRid();
+    for (let k = 1; k <= 4; k++) {
+      const rid = k === 1 ? base : base + '-' + k;
+      const hit = await ghGet(c, 'queue/' + rid);      // 폴더 목록 200 = 이미 있음 · 404 = 비어 있음
+      if (!hit.ok) return rid;
+    }
+    return base + '-' + Math.random().toString(36).slice(2, 6);
+  }
+
+  function ghProg(text, pct, isErr) {
+    const w = $('#ghProgWrap'), t = $('#ghProg'), b = $('#ghBar');
+    if (!w) return;
+    w.classList.toggle('hidden', !text);
+    if (t) { t.textContent = text || ''; t.style.color = isErr ? '#a4232b' : ''; }
+    if (b) b.style.width = (pct == null ? 0 : Math.max(2, Math.min(100, pct))) + '%';
+  }
+
+  function ghBadge(text, kind) {
+    const b = $('#ghBadge');
+    if (!b) return;
+    b.textContent = text;
+    b.className = 'badge' + (kind === 'ok' ? '' : kind === 'warn' ? ' warn' : ' off');
+  }
+
+  /* 연결 테스트 — GET /repos/{owner}/{repo} → private 여부 · permissions.push */
+  async function ghTest() {
+    const c = ghCfg();
+    const out = $('#ghTestOut');
+    if (!c.owner) { toast('저장소를 owner/repo 형식으로 넣어 주세요.', true); if (out) out.textContent = '저장소 주소 형식이 아닙니다 · 예) lvybb1102-lgtm/ink1-publish-queue'; return; }
+    if (out) out.textContent = '확인 중…';
+    try {
+      const res = await fetch(GH_API + '/repos/' + encodeURIComponent(c.owner) + '/' + encodeURIComponent(c.name),
+        { headers: ghHeaders(c), cache: 'no-store' });
+      const raw = await res.text();
+      let j = {};
+      try { j = JSON.parse(raw); } catch (e) {}
+      if (!res.ok) throw new Error(ghErr(res.status, j));
+      const priv = !!j.private;
+      const push = !!(j.permissions && j.permissions.push);
+      const line = '연결됨 · ' + esc(j.full_name || c.repo) + ' · ' +
+        (priv ? '<b>비공개</b>' : '<b>공개</b>') + ' · ' +
+        (c.token ? (push ? '<b>쓰기 가능</b>' : '<b>읽기만 가능</b>') : '토큰 없음(읽기 확인만)');
+      if (out) out.innerHTML = line + '<br>' + (push ? '사진과 원고를 올릴 수 있습니다.' : '토큰에 <b>Contents: Read and write</b> 권한을 주면 바로 올릴 수 있습니다.');
+      ghBadge(push ? '연결됨' : (c.token ? '읽기만' : '토큰 필요'), push ? 'ok' : 'warn');
+      toast(push ? '저장소 연결됨 · 바로 발행할 수 있습니다' : '저장소는 열리지만 쓰기 권한이 없습니다', !push);
+    } catch (e) {
+      const msg = (e && e.name === 'TypeError')
+        ? 'GitHub에 닿지 않았습니다 · 인터넷 연결을 확인해 주세요.'
+        : ((e && e.message) || '연결 테스트에 실패했습니다.');
+      if (out) out.textContent = msg;
+      ghBadge('미연결', 'warn');
+      toast(msg, true);
+    }
+  }
+
+  /* 원클릭 바로발행 전송 — 사진 → pack.json → ready.json */
+  async function ghQueue() {
+    const r = S.result;
+    if (!r) return;
+    const c = ghCfg();
+    const out = $('#ghOut');
+    const btn = $('#ghSend');
+    if (!c.owner) {
+      const m = '저장소 주소를 확인해 주세요 · 설정(⚙)에서 owner/repo 형식으로 넣습니다.';
+      if (out) out.textContent = m; toast(m, true);
+      return;
+    }
+    if (!c.token) {
+      const m = 'GitHub 토큰(PAT)이 없습니다 · 설정(⚙) → ⚡ 원클릭 바로발행 큐에서 저장해 주세요.';
+      if (out) out.textContent = m; toast('토큰을 먼저 저장해 주세요 · 설정(⚙)', true);
+      return;
+    }
+    const ridP = pubId(r);
+    const already = chState(ridP, 'gh');
+    if (already && already.url && !confirm('이 원고는 이미 큐에 보낸 기록이 있습니다.\n한 번 더 보내면 니케가 같은 글을 두 번 발행할 수 있습니다.\n그래도 보낼까요?')) return;
+
+    if (btn) btn.disabled = true;
+    if (out) out.innerHTML = '';
+    const title = r.titles[S.selTitle] || r.titles[0] || '';
+    const b = BRANDS[r.brand] || BRANDS.ink1;
+    const photos = S.photos.slice();
+    const total = photos.length;
+    try {
+      ghProg('저장소 확인 중…', 2);
+      const rid = await uniqueRid(c);
+      const refs = [];
+
+      // 1) 사진 먼저 (idx_원래이름.jpg) — 가리기 반영된 1280px JPEG
+      for (let i = 0; i < total; i++) {
+        const p = photos[i];
+        const fname = String(i + 1).padStart(2, '0') + '_' + safeFileName(p.name, i + 1);
+        const path = 'queue/' + rid + '/photos/' + fname;
+        const bytes = dataUrlToU8(p.disp);
+        ghProg('사진 ' + (i + 1) + '/' + total + ' 올리는 중…', 4 + Math.round((i / Math.max(1, total)) * 74));
+        await ghPut(c, path, bytes, 'ink1 queue ' + rid + ' · 사진 ' + (i + 1) + '/' + total);
+        refs.push({
+          index: i + 1, name: fname, original: p.name || '', path: path,
+          bytes: bytes.length, takenAt: p.dateText || '', edited: !!p.edited,
+          width: p.w || null, height: p.h || null
+        });
+      }
+
+      // 2) 원고·채널·설정 메타데이터 (사진은 경로만 참조)
+      ghProg('원고 올리는 중…', 82);
+      const pack = buildPack(r);
+      pack.appResultId = pack.requestId;      // 앱 기록 ID(로컬 발행 로그 키)는 따로 보존
+      pack.requestId = rid;                    // 큐의 요청 ID = 경로 queue/{request_id}/
+      pack.photos = refs.map((x) => ({
+        index: x.index, name: x.name, original: x.original, path: x.path,
+        takenAt: x.takenAt, edited: x.edited, bytes: x.bytes, width: x.width, height: x.height
+      }));
+      pack.photosNote = '사진 원본은 이 저장소의 photos[].path 에 있습니다(pack.json 안에는 base64를 넣지 않습니다).';
+      pack.queue = {
+        request_id: rid, repo: c.repo, base_path: 'queue/' + rid + '/',
+        photos_dir: 'queue/' + rid + '/photos/', pack_path: 'queue/' + rid + '/pack.json',
+        ready_path: 'queue/' + rid + '/ready.json',
+        order: 'photos → pack.json → ready.json (ready.json 이 마지막 완료 표시)',
+        watcher: '니케가 주기적으로 ready.json(status=pending)을 찾아 5채널 발행' 
+      };
+      await ghPut(c, 'queue/' + rid + '/pack.json', strToU8(JSON.stringify(pack, null, 1)),
+        'ink1 queue ' + rid + ' · pack.json (원고 ' + (pack.modeLabel || '') + ')' );
+
+      // 3) 완료 마커 — 이것이 올라간 뒤에만 감시 스크립트가 집는다
+      ghProg('완료 표시 올리는 중…', 94);
+      const ready = {
+        request_id: rid,
+        title: title,
+        brand: b.id,
+        channels: onChannels(ridP),
+        photo_count: refs.length,
+        created_at: new Date().toISOString(),
+        status: 'pending'
+      };
+      const readyRes = await ghPut(c, 'queue/' + rid + '/ready.json', strToU8(JSON.stringify(ready, null, 1)),
+        'ink1 queue ' + rid + ' · ready.json (발행 대기)');
+      const htmlUrl = (readyRes && readyRes.content && readyRes.content.html_url) || ('https://github.com/' + c.repo + '/blob/HEAD/queue/' + rid + '/ready.json');
+
+      // 채널 상태 대기 → 발행요청 · 발행 로그
+      onChannels(ridP).forEach((id) => { if (chState(ridP, id).status === '대기') setPub(ridP, id, { status: '발행요청' }); });
+      setPub(ridP, 'gh', { status: '발행요청', url: htmlUrl });
+      renderChannels(); paintP2(); paintPublishLog();
+
+      ghProg('완료! 5분 안에 니케가 자동 발행합니다', 100);
+      if (out) out.innerHTML = '전송 완료 · <b>' + esc(rid) + '</b> · 사진 ' + refs.length + '장 + 원고<br>' +
+        '<a href="' + esc(htmlUrl) + '" target="_blank" rel="noopener noreferrer">GitHub에서 확인</a> · ' +
+        '5분 안에 니케가 ' + onChannels(ridP).length + '채널 발행을 시작합니다.';
+      toast('니케에게 보냈습니다 · 5분 안에 자동 발행');
+    } catch (e) {
+      const msg = (e && e.name === 'TypeError')
+        ? 'GitHub에 닿지 않았습니다 · 인터넷 연결을 확인한 뒤 다시 눌러 주세요.'
+        : ((e && e.message) || '전송에 실패했습니다.');
+      ghProg('전송 실패 · 다시 시도해 주세요', 0, true);
+      if (out) out.textContent = msg;
+      toast(msg, true);
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
   /* ───────────────────────── 홈 ───────────────────────── */
   function dayKey(d) { return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
 
@@ -1994,6 +2266,14 @@
     const brb = $('#brBadge');
     brb.textContent = bridgeUrl() ? '설정됨' : '미설정';
     brb.className = 'badge' + (bridgeUrl() ? '' : ' off');
+
+    // 원클릭 바로발행 큐 (GitHub)
+    const gc = ghCfg();
+    $('#ghRepo').value = gc.raw;
+    $('#ghToken').value = gc.token;
+    ghBadge(ghReady(gc) ? '설정됨' : (gc.raw || gc.token ? '일부 설정' : '미설정'), ghReady(gc) ? 'ok' : 'off');
+    const gto = $('#ghTestOut');
+    if (gto && !gto.textContent) gto.textContent = ghReady(gc) ? '저장됨 · [연결 테스트]로 저장소 접근과 쓰기 권한을 확인하세요.' : '저장소와 토큰을 넣고 [연결 테스트]를 누르면 바로 확인합니다.';
     paintPublishLog();
   }
 
@@ -2176,6 +2456,19 @@
       toast(u ? '브릿지 URL을 저장했습니다' : '브릿지 URL을 지웠습니다');
     });
     $('#brTest').addEventListener('click', bridgeTest);
+    $('#ghSave').addEventListener('click', () => {
+      const repo = $('#ghRepo').value.trim();
+      const token = $('#ghToken').value.trim();
+      if (repo) store.set(LS.ghRepo, repo); else store.del(LS.ghRepo);
+      if (token) store.set(LS.ghToken, token); else store.del(LS.ghToken);
+      const out = $('#ghTestOut');
+      if (out) out.textContent = '';
+      paintSettings();
+      paintP2();
+      toast(token || repo ? '바로발행 큐 설정을 저장했습니다' : '바로발행 큐 설정을 지웠습니다');
+    });
+    $('#ghTest').addEventListener('click', ghTest);
+    $('#ghSend').addEventListener('click', ghQueue);
     $('#pubLogExport').addEventListener('click', () => {
       const data = { app: 'ink1-field-studio', kind: 'publish-log', at: new Date().toISOString(), publish: S.pub };
       downloadBlob(new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' }), '잉크원_st_AI_발행로그.json');
