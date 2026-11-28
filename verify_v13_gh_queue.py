@@ -191,6 +191,20 @@ def main():
 
         pg.on('console', on_console)
 
+        DIALOG = {'act': 'accept', 'seen': 0}
+
+        def on_dialog(d):
+            DIALOG['seen'] += 1
+            try:
+                if DIALOG['act'] == 'dismiss':
+                    d.dismiss()
+                else:
+                    d.accept()
+            except Exception:
+                pass
+
+        pg.on('dialog', on_dialog)
+
         pg.route('**/generativelanguage.googleapis.com/**', lambda r: r.fulfill(
             status=200, content_type='application/json', headers={'Access-Control-Allow-Origin': '*'},
             body=json.dumps({"candidates": [{"content": {"parts": [{"text": MOCK}]}, "finishReason": "STOP"}],
@@ -365,7 +379,7 @@ def main():
         # ── 6. 같은 ID 충돌 → 접미사
         GH['calls'].clear()
         GH['collision'] = True
-        pg.once('dialog', lambda d: d.accept())
+        DIALOG['act'] = 'accept'
         pg.click('#ghSend')
         pg.wait_for_timeout(2500)
         ps2 = puts()
@@ -377,7 +391,7 @@ def main():
         # ── 7. 실패 처리 — 404면 ready.json 올리지 않음
         GH['calls'].clear()
         GH['mode'] = 'notfound'
-        pg.once('dialog', lambda d: d.accept())
+        DIALOG['act'] = 'accept'
         pg.click('#ghSend')
         pg.wait_for_timeout(1600)
         ps3 = puts()
@@ -388,7 +402,7 @@ def main():
         # ── 8. sha 덮어쓰기(422 → sha 조회 → 재시도)
         GH['calls'].clear()
         GH['sha_once'] = True
-        pg.once('dialog', lambda d: d.accept())
+        DIALOG['act'] = 'accept'
         pg.click('#ghSend')
         pg.wait_for_timeout(2500)
         ps4 = puts()
@@ -415,12 +429,12 @@ def main():
         pg.evaluate("localStorage.setItem('ink1fs_gh_token_v1','github_pat_TESTTOKEN123')")
 
         # ── 9b. 사진 없는 원고(기록에서 열림) → 확인창 한 번 거친다
-        pg.once('dialog', lambda d: d.dismiss())
+        DIALOG['act'] = 'dismiss'
         GH['calls'].clear()
         pg.click('#ghSend')
         pg.wait_for_timeout(500)
         ok(len(puts()) == 0, '사진 없는 원고 — 확인창에서 취소하면 업로드 0회')
-        pg.once('dialog', lambda d: d.accept())
+        DIALOG['act'] = 'accept'
         pg.click('#ghSend')
         pg.wait_for_timeout(2600)
         ps5 = puts()
