@@ -355,8 +355,10 @@ def main():
         h0 = pg.evaluate('document.documentElement.scrollWidth - document.documentElement.clientWidth')
         ok(h0 == 0, '가로 스크롤(결과·P2) %dpx' % h0)
         pg.eval_on_selector('#p2Card', 'e => e.scrollIntoView({block:"start"})')
-        pg.wait_for_timeout(300)
+        pg.wait_for_timeout(2900)   # 토스트가 사라진 뒤
         pg.screenshot(path=SHOT)
+        pg.locator('#p2Card').screenshot(path='/workspace/downloads/필드스튜디오_p2_어댑터_카드.png')
+        pg.screenshot(path='/workspace/downloads/필드스튜디오_p2_어댑터_전체.png', full_page=True)
         h1 = pg.evaluate('document.documentElement.scrollWidth - document.documentElement.clientWidth')
         ok(h1 == 0, '가로 스크롤(스크린샷 시점) %dpx' % h1)
         ok(not errs, '콘솔·페이지 에러 0건' + (': ' + '; '.join(errs[:3]) if errs else ''))
