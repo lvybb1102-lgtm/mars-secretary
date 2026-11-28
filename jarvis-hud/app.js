@@ -865,8 +865,14 @@
     return appendAILine();
   }
 
+  /* 마지막 AI 답변의 첫 줄이 패널 위쪽에 오도록 맞춘다(답변을 처음부터 읽게) */
   function scrollSub() {
-    el.subtitleBody.scrollTop = el.subtitleBody.scrollHeight;
+    const span = document.getElementById('subText');
+    const box = el.subtitleBody;
+    if (!span || !box) return;
+    const lineEl = span.parentElement;
+    const top = lineEl.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop - 4;
+    box.scrollTop = Math.max(0, top);
   }
 
   function showUserLine(text) {
@@ -927,6 +933,7 @@
         clearInterval(typeTimer);
         span.parentElement.classList.remove('typing');
         el.typingFlag.hidden = true;
+        scrollSub();
       }
     }, 16);
   }
