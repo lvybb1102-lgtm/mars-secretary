@@ -1,7 +1,7 @@
 {
-  "name": "잉크원 필드 스튜디오",
-  "short_name": "필드 스튜디오",
-  "description": "현장 사진과 한 줄 메모로 블로그·쇼츠·스레드·인스타 원고를 1분에 만드는 사내 앱",
+  "name": "잉크원_st_AI",
+  "short_name": "잉크원_st_AI",
+  "description": "잉크원_st_AI — 현장 사진과 한 줄 메모로 블로그·쇼츠·스레드·인스타 원고를 만들고 네이버·구글 블로그·니케·로컬 PC로 내보내는 앱",
   "lang": "ko",
   "dir": "ltr",
   "start_url": "./",
@@ -11,10 +11,28 @@
   "orientation": "portrait",
   "background_color": "#eef3f0",
   "theme_color": "#08251c",
-  "categories": ["productivity", "business"],
+  "categories": [
+    "productivity",
+    "business"
+  ],
   "icons": [
-    { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "./icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }

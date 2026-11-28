@@ -199,3 +199,28 @@ input[type=range]{width:100%;accent-color:#0f7a5a}
 .kv span{color:var(--muted)}
 .kv b{font-weight:700}
 @media (max-width:380px){ .kpis{grid-template-columns:1fr 1fr} }
+
+/* ── P2 발행 어댑터 ── */
+.p2{border-color:#cfe7dd}
+.p2 .p2t{display:block;font-size:13px;color:#0b4d36;letter-spacing:-.01em}
+.chrow{display:grid;grid-template-columns:24px 1fr auto;align-items:center;gap:9px;padding:9px 0;border-top:1px solid #eef3f0}
+.chrow.first{border-top:0;padding-top:2px}
+.chk{width:23px;height:23px;border-radius:7px;border:1.6px solid #c2d6cd;background:#fff;display:grid;place-items:center;
+  font-size:13px;line-height:1;color:transparent;font-weight:800;padding:0}
+.chk.on{background:#0f7a5a;border-color:#0f7a5a;color:#fff}
+.chname{font-size:13px;font-weight:700;line-height:1.35;min-width:0}
+.chname small{display:block;font-size:10.5px;color:var(--muted);font-weight:500}
+.chstatus{font-size:11.5px;font-weight:800;border-radius:999px;padding:5px 9px;border:1px solid #d7e3de;
+  background:#f7faf8;color:#7d8d88;white-space:nowrap;min-width:62px;text-align:center}
+.chstatus.s1{background:#eef6ff;border-color:#c9dff6;color:#1b5a94}
+.chstatus.s2{background:#fff6e8;border-color:#f0dcbf;color:#8a5309}
+.chstatus.s3{background:#eaf7ef;border-color:#bfe0d2;color:#0b6b4f}
+.churl{margin:-3px 0 9px 33px}
+.churl input{font-size:12px;padding:7px 10px;border-radius:9px;background:#fbfdfc}
+.chkline{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--ink2)}
+.chkline input{width:17px;height:17px;accent-color:#0f7a5a;flex:none}
+.logrow{display:grid;grid-template-columns:1fr auto;gap:4px 8px;padding:8px 0;border-top:1px solid #eef3f0;font-size:12.5px}
+.logrow:first-child{border-top:0}
+.logrow b{font-weight:800;color:#0b4d36;font-size:12.5px}
+.logrow .lg{font-size:11px;color:var(--muted);white-space:nowrap}
+.logrow .lu{grid-column:1/-1;font-size:11px;color:#1b5a94;word-break:break-all}

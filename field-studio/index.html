@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>잉크원 필드 스튜디오</title>
+<title>잉크원_st_AI</title>
 <meta name="theme-color" content="#08251c">
-<meta name="description" content="현장 사진과 한 줄 메모로 블로그·쇼츠·스레드·인스타 원고를 1분에 만드는 사내 앱">
+<meta name="description" content="잉크원_st_AI — 현장 사진과 한 줄 메모로 블로그·쇼츠·스레드·인스타 원고를 1분에 만들고, 4가지 경로로 바로 내보내는 사내 앱">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
 <link rel="stylesheet" href="./style.css">
@@ -14,7 +14,7 @@
 <div class="app">
   <div class="topbar">
     <div>
-      <div class="brand"><span class="dot"></span>잉크원 필드 스튜디오</div>
+      <div class="brand"><span class="dot"></span>잉크원_st_AI</div>
       <div class="who" id="whoLine">잉크원 · lvyhs621</div>
     </div>
     <button class="brandsel" id="brandBtn">잉크원 ▾</button>
@@ -198,15 +198,49 @@
           </div>
         </div>
 
+        <div class="card p2" id="p2Card">
+          <h3>🚀 P2 발행 어댑터 <span class="tiny" id="p2Sum">–</span></h3>
+          <div class="tiny" style="margin:-2px 0 8px">보낼 채널을 고르고, 상태를 눌러 기록하세요(대기 → 임시저장 → 발행요청 → 발행완료).</div>
+          <div id="chList"></div>
+
+          <div class="hr"></div>
+          <b class="p2t">가. 네이버 블로그 — 안전모드(1탭 쓰기)</b>
+          <div class="tiny" style="margin-top:3px">서식 HTML을 복사한 뒤 글쓰기 창을 엽니다. 본문에 붙여넣고 [발행]만 누르면 됩니다.</div>
+          <button class="btn small" id="naverSafeBtn" style="margin-top:9px">📋 서식 HTML 복사 + 네이버 글쓰기 열기</button>
+          <div class="tiny" id="naverOut" style="margin-top:6px"></div>
+
+          <div class="hr"></div>
+          <b class="p2t">나. 구글 블로그(Blogger) — 공식 API</b>
+          <div class="tiny" id="bgState" style="margin-top:3px">토큰 없음 · 설정(⚙)에서 Blog ID와 Access Token을 넣어 주세요.</div>
+          <label class="chkline" style="margin-top:9px"><input type="checkbox" id="bgDraft" checked> 임시저장(draft)으로 올리기 — 끄면 바로 공개</label>
+          <button class="btn small" id="bgSend" style="margin-top:9px">🌐 구글 블로그로 바로 임시저장/발행</button>
+          <div class="tiny" id="bgOut" style="margin-top:6px"></div>
+
+          <div class="hr"></div>
+          <b class="p2t">다. 니케(비서)에게 발행 맡기기 — 발행팩</b>
+          <div class="tiny" style="margin-top:3px">제목·본문·태그·스레드·쇼츠·인스타·선택 채널을 발행 지시서로 복사합니다. 채팅에 붙여넣기만 하면 됩니다.</div>
+          <div class="btnrow" style="margin-top:9px">
+            <button class="btn small" id="packCopy">🤖 발행팩 복사</button>
+            <button class="btn ghost small" id="packJson">.json 내려받기</button>
+          </div>
+
+          <div class="hr"></div>
+          <b class="p2t">라. 로컬 PC 브릿지(Webhook)</b>
+          <div class="tiny" id="bridgeState" style="margin-top:3px">URL 미설정 · 설정(⚙)에서 브릿지 주소를 넣으세요.</div>
+          <button class="btn ghost small" id="bridgeSend" style="margin-top:9px">⚡ 로컬 PC 브릿지로 전송</button>
+          <div class="tiny" id="bridgeOut" style="margin-top:6px"></div>
+        </div>
+
         <div class="approve">
-          <b>승인 — 대외 발행은 아직 연결 전</b>
+          <b>승인 — 실제 게시는 마지막 버튼에서</b>
           <div class="muted" style="margin-top:4px">
-            이 프로토타입은 <b>원고 생성까지</b>입니다. 네이버·유튜브·인스타 자동 발행은 2단계(발행 어댑터)에서 붙입니다.
-            지금은 [서식 HTML 복사]로 네이버 글쓰기에 붙여넣어 주세요.
+            원고는 이 기기 안에서만 만들어졌습니다. 위 4가지 경로 중 <b>누르는 순간</b> 전송·게시가 일어납니다.
+            네이버는 글쓰기 창을 열어 붙여넣기까지만 하고, Blogger는 <b>임시저장(draft)</b>이 기본입니다.
+            유튜브·인스타·스레드는 대본·캡션 복사와 니케 위임으로 처리합니다.
           </div>
           <div class="btnrow" style="margin-top:10px">
             <button class="btn danger small" id="discardBtn">버리기</button>
-            <button class="btn small" id="naverBtn">복사하고 네이버 열기</button>
+            <button class="btn ghost small" id="goHist">기록 보기</button>
           </div>
         </div>
       </div>
@@ -252,6 +286,47 @@
       </div>
 
       <div class="card">
+        <h3>구글 블로그(Blogger) 설정 <span class="badge off" id="bgBadge">미설정</span></h3>
+        <label class="f" for="bgBlog">Blog ID 또는 주소</label>
+        <input type="text" id="bgBlog" placeholder="ink1-suwon-test.blogspot.com 또는 숫자 ID" autocomplete="off" spellcheck="false">
+        <label class="f" for="bgToken" style="margin-top:9px">Google OAuth Access Token</label>
+        <input type="password" id="bgToken" placeholder="ya29...." autocomplete="off" spellcheck="false">
+        <div class="row" style="margin-top:9px">
+          <button class="btn ghost small" id="bgSave" style="width:auto">저장</button>
+          <button class="btn ghost small" id="bgTest" style="width:auto">연결 테스트</button>
+        </div>
+        <div class="muted" style="margin-top:8px">
+          토큰은 <b>이 브라우저(localStorage)에만</b> 저장됩니다. 권한(scope)은 <b>https://www.googleapis.com/auth/blogger</b> 하나면 됩니다.
+          OAuth 토큰은 약 1시간이면 만료되니 필요할 때 다시 발급해 붙여넣으세요.
+        </div>
+        <div class="tiny" id="bgTestOut" style="margin-top:6px"></div>
+      </div>
+
+      <div class="card">
+        <h3>로컬 PC 브릿지 <span class="badge off" id="brBadge">미설정</span></h3>
+        <label class="f" for="brUrl">브릿지 URL</label>
+        <input type="text" id="brUrl" placeholder="http://127.0.0.1:8787/publish" autocomplete="off" spellcheck="false">
+        <div class="row" style="margin-top:9px">
+          <button class="btn ghost small" id="brSave" style="width:auto">저장</button>
+          <button class="btn ghost small" id="brTest" style="width:auto">연결 테스트(/health)</button>
+        </div>
+        <div class="muted" style="margin-top:8px">
+          PC에서 <b>field_studio_bridge_sample.py</b>를 켜 두면 폰에서 만든 원고가 PC 폴더로 저장되고,
+          Blogger 토큰까지 넣어 두면 구글 블로그에 바로 올라갑니다. (기본 주소 <b>http://127.0.0.1:8787/publish</b>)
+        </div>
+        <div class="tiny" id="brTestOut" style="margin-top:6px"></div>
+      </div>
+
+      <div class="card">
+        <h3>발행 로그 <span class="tiny" id="pubLogN"></span></h3>
+        <div id="pubLogList"><div class="empty">아직 발행 기록이 없습니다.</div></div>
+        <div class="btnrow" style="margin-top:10px">
+          <button class="btn ghost small" id="pubLogExport">로그 내보내기(JSON)</button>
+          <button class="btn ghost small" id="pubLogClear">로그 지우기</button>
+        </div>
+      </div>
+
+      <div class="card">
         <h3>기록</h3>
         <div class="kv"><span>저장된 원고</span><b id="histN">0건</b></div>
         <div class="kv"><span>브라우저 저장소 사용</span><b id="lsUse">–</b></div>
@@ -264,8 +339,9 @@
       <div class="card">
         <h3>이 앱</h3>
         <div class="muted">
-          잉크원 필드 스튜디오 v1.0 (P1 프로토타입) · 2026-11-27<br>
-          현장 입력 → Gemini 생성 → 복사·저장까지 실제 동작합니다. 발행 어댑터(네이버·유튜브·인스타)는 다음 단계입니다.
+          잉크원_st_AI <b>v1.1 (P2 발행 어댑터)</b> · 2026-11-28<br>
+          현장 입력 → Gemini 생성 → 복사·저장에 이어, <b>네이버 안전모드 · Blogger API · 니케 발행팩 · 로컬 PC 브릿지</b> 4경로로 내보냅니다.
+          유튜브·인스타·스레드는 대본·캡션 복사와 니케 위임으로 처리합니다.
         </div>
       </div>
     </section>

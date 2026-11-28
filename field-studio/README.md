@@ -1,10 +1,50 @@
-# 잉크원 필드 스튜디오 (P1 프로토타입)
+# 잉크원_st_AI (잉크원 필드 스튜디오) — P2 발행 어댑터
 
-현장 사진 + 한 줄 메모 → **제목 3안 · 네이버 블로그 본문(서식 HTML) · 스레드 · 15초 쇼츠 대본 · 인스타 캡션 · 해시태그**를 한 번에 만드는 모바일 퍼스트 PWA입니다.
+현장 사진 + 한 줄 메모 → **제목 3안 · 네이버 블로그 본문(서식 HTML) · 스레드 · 15초 쇼츠 대본 · 인스타 캡션 · 해시태그**를 한 번에 만들고,
+**네이버 안전모드 · 구글 블로그(Blogger) API · 니케 발행팩 · 로컬 PC 브릿지** 4경로로 내보내는 모바일 퍼스트 PWA입니다.
 
+- 앱 이름: **잉크원_st_AI** (2026-11-28 마르스 님 지정) · 경로는 `/field-studio/` 그대로
 - 접속: **https://lvybb1102-lgtm.github.io/mars-secretary/field-studio/**
 - 단독 파일: `downloads/잉크원_필드스튜디오_프로토타입.html` (PC·폰에서 파일로 열어도 동작)
+- 로컬 브릿지 샘플: `downloads/field_studio_bridge_sample.py`
 - 이 폴더는 `mars-secretary` 저장소의 하위 경로입니다. 같은 주소(lvybb1102-lgtm.github.io)라 **마르스 비서실에 저장한 Gemini 키를 그대로 가져올 수 있습니다**. (`설정 → 비서실 키 가져오기`)
+
+## P2 발행 어댑터 (2026-11-28 추가)
+
+결과 화면 아래 **「🚀 P2 발행 어댑터」** 카드에서 4경로로 내보냅니다.
+
+| 경로 | 버튼 | 실제 동작 |
+|---|---|---|
+| **(A) 채널·상태** | 채널 5종 체크 + 상태 배지 | `네이버 블로그 / 구글 블로그(Blogger) / 유튜브 쇼츠 / 인스타그램 / 스레드`. 배지를 누르면 `대기 → 임시저장 → 발행요청 → 발행완료` 순환, 채널별 URL 메모. 글 ID별로 `localStorage`(`ink1fs_publish_v1`)에 저장하고 설정의 **발행 로그**에 시간순으로 남김 |
+| **(B) 네이버 안전모드** | `📋 서식 HTML 복사 + 네이버 글쓰기 열기` | `text/html`+`text/plain` 클립보드 복사 후 `https://blog.naver.com/PostWriteForm.naver?blogId=<브랜드 블로그>` 새 탭. 붙여넣고 [발행]만 누르면 됨 |
+| **(C) Blogger 공식 API** | `🌐 구글 블로그로 바로 임시저장/발행` | `POST /blogger/v3/blogs/{blogId}/posts/?isDraft=true|false` (`Bearer` 토큰, 본문 `status: draft|live`, `labels`는 `#` 제거). 기본 **임시저장** |
+| **(D) 니케 위임 + 로컬 브릿지** | `🤖 발행팩 복사` / `.json 내려받기` / `⚡ 로컬 PC 브릿지로 전송` | `#잉크원_st_AI_발행요청` 마크다운(사람용 섹션 + 기계용 JSON)을 복사. 브릿지 URL이 있으면 사진 base64까지 포함해 `POST` |
+
+### 설정(⚙)에 추가된 항목
+
+- **구글 블로그(Blogger) 설정**: `Blog ID 또는 주소`(예 `ink1-suwon-test.blogspot.com`) + `Google OAuth Access Token`(localStorage 전용, scope `https://www.googleapis.com/auth/blogger`) + **연결 테스트**(`blogs/byurl` → `GET blogs/{id}`). 주소를 넣으면 byurl 로 숫자 ID를 조회해 저장.
+- **로컬 PC 브릿지**: `브릿지 URL`(예 `http://192.168.0.12:8787/publish`) + **연결 테스트**(`GET /health`).
+- **발행 로그**: 상태 변화 이력(채널·시각·`이전 → 이후`·URL) + JSON 내보내기·지우기.
+
+### 발행팩 헤더
+
+```
+#잉크원_st_AI_발행요청
+```
+
+사람이 읽는 섹션(제목 후보·본문 HTML·텍스트·태그·스레드·쇼츠·인스타·유튜브·사진·지킬 것) 뒤에 `## 기계용 JSON`(`type: ink1_st_ai_publish_request`)이 붙습니다. 클립보드에는 사진 base64를 넣지 않고(가벼움), `.json` 내려받기와 브릿지 전송에는 넣습니다.
+
+### 로컬 브릿지 샘플
+
+```bash
+python3 downloads/field_studio_bridge_sample.py                  # 127.0.0.1:8787
+python3 downloads/field_studio_bridge_sample.py --host 0.0.0.0   # 같은 와이파이의 폰에서 접속
+python3 downloads/field_studio_bridge_sample.py --host 0.0.0.0 --token ya29.… --blog 1234567890
+```
+
+- `GET /health` → `{ok, service, version, blogger}` · `POST /publish` → 원고 9종 + 사진을 `./field-studio-bridge/<요청ID>/`에 저장, 토큰이 있으면 Blogger에도 임시저장.
+- CORS·OPTIONS·`Access-Control-Allow-Private-Network` 헤더 포함(폰 브라우저에서 사설망 호출 허용).
+- **폰에서 `127.0.0.1` 은 폰 자신**입니다. PC의 LAN IP 또는 터널 주소를 넣어야 합니다.
 
 ## 쓰기 3모드 (2026-11-28 추가)
 
@@ -45,25 +85,27 @@
 |---|---|
 | `index.html` | 화면 |
 | `style.css` | 스타일 |
-| `app.js` | 앱 로직(EXIF·모자이크·Gemini·ZIP·기록) |
-| `manifest.webmanifest` | 홈 화면 추가(PWA) |
-| `sw.js` | 오프라인 껍데기 캐시(`/field-studio` 범위만) |
+| `app.js` | 앱 로직(EXIF·모자이크·Gemini·ZIP·기록·P2 발행 어댑터) |
+| `manifest.webmanifest` | 홈 화면 추가(PWA) — name/short_name `잉크원_st_AI` |
+| `sw.js` | 오프라인 껍데기 캐시(`/field-studio` 범위만, **v3**) |
 | `icon-*.png` | 앱 아이콘 |
 
 ## 키·보안
 
-- Gemini 키는 **브라우저 localStorage**에만 저장합니다. 코드·저장소에 없습니다.
-- 호출은 브라우저 → `generativelanguage.googleapis.com` 직접이라 키가 다른 서버를 거치지 않습니다.
-- 사진은 기기 브라우저 안에서만 줄이고, 생성 시에만 Gemini로 전송합니다. 서버 저장 없음.
+- Gemini 키·Blogger 토큰은 **브라우저 localStorage**에만 저장합니다. 코드·저장소에 없습니다.
+- 호출은 브라우저 → Google API 직접이라 키가 다른 서버를 거치지 않습니다.
+- 사진은 기기 브라우저 안에서만 줄이고, 생성 시에만 Gemini로 전송합니다. 서버 저장 없음(로컬 브릿지는 본인 PC).
 
 ## 실측 (2026-11-28)
 
 - 생성 1회 **11.4초**, 실제 모델 `gemini-3.6-flash`, 사진 3장 포함 요청 1회.
 - 결과: 본문 1,808자, 태그 8개, 스레드 283자, 쇼츠 3줄, CTA·해시태그 포함.
 - 390×844 · 430×932에서 가로 스크롤 0px, 콘솔 오류 0건.
-- **정보성 모드 실측**(430×932, 사진 0장, gemini-3.6-flash): 랜덤 8.8~16.2초 · 지정 10~20.3초. 표본 본문 1,531~2,182자(대부분 1,800~2,100), 태그 8~10(10개 상한), 스레드 193~329자, 쇼츠 3줄·엔딩 멘트 고정. 본문 상한 1,900자는 프롬프트로 지시하지만 표본에 따라 최대 +280자 초과.
-- 정보성 모드 UI·payload 검증 42항목(모드 전환·추천칩·주제뽑기·최근제목 중복회피·콘솔 0·가로스크롤 0) 전부 통과.
+- **정보성 모드 실측**(430×932, 사진 0장, gemini-3.6-flash): 랜덤 8.8~16.2초 · 지정 10~20.3초. 표본 본문 1,531~2,182자(대부분 1,800~2,100), 태그 8~10(10개 상한), 스레드 193~329자, 쇼츠 3줄·엔딩 멘트 고정.
+- **P2 발행 어댑터 검증**(430×932, 84항목 전부 통과): 채널 5종·상태 순환·URL 저장, 네이버 새 탭 URL/클립보드 `text/html`+`text/plain`, Blogger POST payload(`isDraft`, `Bearer`, `labels` 8, `status:draft`), 발행팩 마크다운/JSON, 브릿지 payload·/health, 발행 로그, 콘솔 0·가로 스크롤 0.
+- **브릿지 실동작**: `/health` 200, `/publish` → 원고 9종 + 사진 원본 저장, `type` 불일치 400, OPTIONS CORS/PNA 헤더 확인.
 
-## 다음 단계 (P2)
+## 다음 단계
 
-발행 어댑터 — 네이버 안전모드(임시저장+1탭), YouTube Data API, Instagram/Threads Graph API, Blogger 공식 API.
+- YouTube Data API(쇼츠 업로드), Instagram/Threads Graph API 는 앱 심사·토큰 절차가 필요해 다음 단계로 남깁니다.
+- 네이버는 공식 글쓰기 API 가 없어 **안전모드(복사 + 1탭)** 를 유지합니다.

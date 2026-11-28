@@ -1,6 +1,7 @@
-/* 잉크원 필드 스튜디오 — 오프라인 껍데기 캐시 (네트워크 우선, 실패 시 캐시)
+/* 잉크원_st_AI — 오프라인 껍데기 캐시 (네트워크 우선, 실패 시 캐시)
+   v3: P2 발행 어댑터(네이버·Blogger·니케 발행팩·로컬 브릿지) 반영
    범위는 ./ (field-studio) 안으로 한정한다. 상위 비서실 SW와 충돌하지 않게 자기 파일만 다룬다. */
-const CACHE = 'ink1-field-studio-v2';
+const CACHE = 'ink1-field-studio-v3';
 const ASSETS = ['./', './index.html', './style.css', './app.js', './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png'];
 

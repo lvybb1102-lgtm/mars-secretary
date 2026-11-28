@@ -1,4 +1,4 @@
-/* 잉크원 필드 스튜디오 — P1 프로토타입
+/* 잉크원_st_AI — 잉크원 필드 스튜디오 (P1 프로토타입 + P2 발행 어댑터)
    현장 사진 + 한 줄 메모 → Gemini 1회 호출 → 제목 3안·블로그 HTML·스레드·15초 쇼츠·인스타·해시태그
    키는 localStorage에만 저장한다(코드·저장소에 하드코딩 없음). */
 (() => {
@@ -11,6 +11,10 @@
     oa: 'ink1fs_openai_key_v1',
     cfg: 'ink1fs_cfg_v1',
     hist: 'ink1fs_history_v1',
+    pub: 'ink1fs_publish_v1',
+    bgBlog: 'ink1fs_blogger_blog_v1',
+    bgToken: 'ink1fs_blogger_token_v1',
+    bridge: 'ink1fs_bridge_url_v1',
     mars: 'mars_secretary_mobile_gemini_v1',
     marsOa: 'mars_secretary_mobile_openai_v1'
   };
@@ -112,6 +116,7 @@
     selTitle: 0,
     pane: 'blog',
     history: [],
+    pub: {},
     cfg: { model: 'auto' },
     busy: false
   };
@@ -132,6 +137,10 @@
 
   function loadHistory() {
     try { S.history = JSON.parse(store.get(LS.hist) || '[]') || []; } catch (e) { S.history = []; }
+  }
+
+  function loadPublish() {
+    try { S.pub = JSON.parse(store.get(LS.pub) || '{}') || {}; } catch (e) { S.pub = {}; }
   }
   function saveHistory() {
     while (S.history.length > 20) S.history.pop();
@@ -1046,6 +1055,16 @@
 
     $$('#seg button').forEach((b) => b.classList.toggle('on', b.dataset.p === S.pane));
     $$('.pane').forEach((p) => p.classList.toggle('on', p.id === 'pane-' + S.pane));
+
+    // P2 발행 어댑터
+    renderChannels();
+    paintP2();
+    const nOut = $('#naverOut');
+    if (nOut) nOut.textContent = '';
+    const bOut = $('#bgOut');
+    if (bOut) bOut.textContent = '';
+    const rOut = $('#bridgeOut');
+    if (rOut) rOut.textContent = '';
   }
 
   function esc(s) {
@@ -1213,7 +1232,7 @@
   function zipName(r) {
     const d = new Date();
     const p = (n) => String(n).padStart(2, '0');
-    return '필드스튜디오_' + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '_' + p(d.getHours()) + p(d.getMinutes());
+    return '잉크원_st_AI_' + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '_' + p(d.getHours()) + p(d.getMinutes());
   }
 
   function buildPackage(r) {
@@ -1230,8 +1249,590 @@
     return files;
   }
 
+  /* ═════════════════════ P2 발행 어댑터 ═════════════════════ */
+  const CHANNELS = [
+    { id: 'naver', name: '네이버 블로그', sub: '안전모드 · 서식 HTML 1탭 쓰기' },
+    { id: 'blogger', name: '구글 블로그(Blogger)', sub: '공식 API · 임시저장/발행' },
+    { id: 'youtube', name: '유튜브 쇼츠', sub: '15초 대본 · 제목/설명' },
+    { id: 'instagram', name: '인스타그램', sub: '캡션 · 위치 태그 없음' },
+    { id: 'threads', name: '스레드', sub: '글 250~350자' }
+  ];
+  const PUB_STATES = ['대기', '임시저장', '발행요청', '발행완료'];
+  const BLOGGER_API = 'https://www.googleapis.com/blogger/v3/';
+  const GUARDRAILS = [
+    '가격·월 임대료·견적 숫자는 어느 채널에도 넣지 않는다',
+    '제목 끝 /아싸렌탈수원지사 유지(잉크원 프리셋), 전화번호는 제목에 넣지 않는다',
+    '인스타 위치 태그 없음 · 첫 줄은 "수원"으로 시작',
+    '쇼츠 엔딩 음성은 "잉크원·아싸렌탈, 1544-4065"로 끝낸다',
+    '해시태그 8~10개(10개 초과 금지)'
+  ];
+
+  function pubId(r) { return (r && r.id) || 'none'; }
+
+  function pubEntry(rid, create) {
+    if (!S.pub[rid] && create) S.pub[rid] = { ch: {}, log: [] };
+    return S.pub[rid] || { ch: {}, log: [] };
+  }
+
+  function chState(rid, chId) {
+    const e = pubEntry(rid, true);
+    if (!e.ch[chId]) e.ch[chId] = { on: true, status: '대기', url: '' };
+    return e.ch[chId];
+  }
+
+  function setPub(rid, chId, patch) {
+    const e = pubEntry(rid, true);
+    const st = chState(rid, chId);
+    const from = st.status;
+    Object.assign(st, patch);
+    if (patch.status && patch.status !== from) {
+      e.log.unshift({ at: new Date().toISOString(), ch: chId, from: from, to: st.status, url: st.url || '' });
+      while (e.log.length > 30) e.log.pop();
+    } else if (patch.url !== undefined && e.log[0]) {
+      e.log[0].url = st.url || e.log[0].url;
+    }
+    savePublish();
+  }
+
+  function savePublish() {
+    const keep = {};
+    const ids = {};
+    S.history.forEach((h) => { if (h && h.id) ids[h.id] = 1; });
+    if (S.result && S.result.id) ids[S.result.id] = 1;
+    Object.keys(S.pub).forEach((k) => { if (ids[k]) keep[k] = S.pub[k]; });
+    let n = Object.keys(keep).length;
+    if (n > 40) {                       // 너무 많으면 오래된 것부터 버린다
+      Object.keys(keep).sort((a, b) => {
+        const ta = (keep[a].log[0] && keep[a].log[0].at) || '';
+        const tb = (keep[b].log[0] && keep[b].log[0].at) || '';
+        return String(ta).localeCompare(String(tb));
+      }).slice(0, n - 40).forEach((k) => { delete keep[k]; });
+    }
+    store.set(LS.pub, JSON.stringify(keep));
+  }
+
+  function chLabel(id) {
+    const c = CHANNELS.filter((x) => x.id === id)[0];
+    return c ? c.name : id;
+  }
+
+  function onChannels(rid) {
+    return CHANNELS.filter((c) => chState(rid, c.id).on).map((c) => c.id);
+  }
+
+  function fmtShort(iso) {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    const p = (n) => String(n).padStart(2, '0');
+    return (d.getMonth() + 1) + '/' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+  function fmtFull(iso) {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    const p = (n) => String(n).padStart(2, '0');
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+
+  /* ── 채널 목록 렌더 ── */
+  function renderChannels() {
+    const box = $('#chList');
+    if (!box) return;
+    box.innerHTML = '';
+    const r = S.result;
+    if (!r) return;
+    const rid = pubId(r);
+    CHANNELS.forEach((c, i) => {
+      const st = chState(rid, c.id);
+      const row = document.createElement('div');
+      row.className = 'chrow' + (i === 0 ? ' first' : '');
+
+      const cb = document.createElement('button');
+      cb.type = 'button';
+      cb.className = 'chk' + (st.on ? ' on' : '');
+      cb.textContent = st.on ? '✓' : '';
+      cb.setAttribute('aria-label', c.name + ' 선택');
+      cb.addEventListener('click', () => {
+        st.on = !st.on;
+        savePublish();
+        renderChannels();
+        paintP2();
+      });
+
+      const nm = document.createElement('div');
+      nm.className = 'chname';
+      nm.innerHTML = esc(c.name) + '<small>' + esc(c.sub) + '</small>';
+
+      const sb = document.createElement('button');
+      sb.type = 'button';
+      sb.className = 'chstatus s' + Math.max(0, PUB_STATES.indexOf(st.status));
+      sb.textContent = st.status;
+      sb.title = '눌러서 상태 바꾸기';
+      sb.addEventListener('click', () => {
+        const idx = (Math.max(0, PUB_STATES.indexOf(st.status)) + 1) % PUB_STATES.length;
+        setPub(rid, c.id, { status: PUB_STATES[idx] });
+        renderChannels();
+        paintP2();
+        paintPublishLog();
+        toast(c.name + ' → ' + PUB_STATES[idx]);
+      });
+
+      row.appendChild(cb);
+      row.appendChild(nm);
+      row.appendChild(sb);
+      box.appendChild(row);
+
+      if (st.status === '임시저장' || st.status === '발행완료' || st.url) {
+        const w = document.createElement('div');
+        w.className = 'churl';
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.value = st.url || '';
+        inp.placeholder = '발행 URL 메모 (선택)';
+        inp.addEventListener('change', () => {
+          st.url = inp.value.trim();
+          setPub(rid, c.id, { url: st.url });
+          paintPublishLog();
+        });
+        w.appendChild(inp);
+        box.appendChild(w);
+      }
+    });
+  }
+
+  function paintP2() {
+    const r = S.result;
+    if (!r) return;
+    const rid = pubId(r);
+    const on = onChannels(rid);
+    const done = CHANNELS.filter((c) => chState(rid, c.id).status === '발행완료').length;
+    $('#p2Sum').textContent = on.length + '/5 채널 · 발행완료 ' + done;
+
+    const c = bloggerCfg();
+    const bs = $('#bgState');
+    if (!c.token) {
+      bs.innerHTML = '토큰 없음 · 설정(⚙)에서 넣으면 바로 올릴 수 있어요. 지금은 <b>HTML 복사</b>로 대체합니다.';
+    } else if (!c.blog) {
+      bs.innerHTML = '토큰 있음 · <b>Blog ID가 비어 있습니다</b> · 설정(⚙)에서 넣어 주세요.';
+    } else {
+      const draft = $('#bgDraft') ? $('#bgDraft').checked : true;
+      bs.innerHTML = '연결 설정됨 · <b>' + esc(c.blog) + '</b> · ' + (draft ? '임시저장(draft)' : '바로 공개');
+    }
+
+    const bu = bridgeUrl();
+    $('#bridgeState').textContent = bu ? '연결 설정됨 · ' + bu : 'URL 미설정 · 설정(⚙)에서 브릿지 주소를 넣으세요.';
+  }
+
+  /* ── 발행 로그(설정 화면) ── */
+  function paintPublishLog() {
+    const box = $('#pubLogList');
+    if (!box) return;
+    const rows = [];
+    Object.keys(S.pub).forEach((rid) => {
+      const e = S.pub[rid];
+      if (!e || !e.log) return;
+      e.log.forEach((l) => rows.push(Object.assign({ rid: rid }, l)));
+    });
+    rows.sort((a, b) => String(b.at).localeCompare(String(a.at)));
+    $('#pubLogN').textContent = rows.length ? rows.length + '건' : '';
+    if (!rows.length) {
+      box.innerHTML = '<div class="empty">아직 발행 기록이 없습니다.</div>';
+      return;
+    }
+    box.innerHTML = '';
+    rows.slice(0, 12).forEach((l) => {
+      const d = document.createElement('div');
+      d.className = 'logrow';
+      d.innerHTML = '<b>' + esc(chLabel(l.ch)) + '</b>' +
+        '<span class="lg">' + esc(fmtShort(l.at)) + '</span>' +
+        '<span class="lg" style="grid-column:1/-1">' + esc(l.from || '') + ' → ' + esc(l.to || '') + '</span>' +
+        (l.url ? '<span class="lu">' + esc(l.url) + '</span>' : '');
+      box.appendChild(d);
+    });
+  }
+
+  /* ── 발행팩(니케 위임) ── */
+  function buildPack(r) {
+    const rid = pubId(r);
+    const b = BRANDS[r.brand] || BRANDS.ink1;
+    const title = r.titles[S.selTitle] || r.titles[0] || '';
+    const states = {};
+    CHANNELS.forEach((c) => {
+      const st = chState(rid, c.id);
+      states[c.id] = { on: !!st.on, status: st.status, url: st.url || '' };
+    });
+    return {
+      header: '#잉크원_st_AI_발행요청',
+      app: '잉크원_st_AI',
+      type: 'ink1_st_ai_publish_request',
+      version: 'P2.0',
+      requestId: rid,
+      requestedAt: new Date().toISOString(),
+      brand: { id: b.id, name: b.name, blog: b.blog, label: b.label },
+      mode: r.mode || 'field',
+      modeLabel: (MODES[r.mode] || {}).label || '설치·AS 후기',
+      topic: r.topic || '',
+      workType: r.type || '',
+      title: title,
+      titles: r.titles || [],
+      article: {
+        title: title,
+        blogHtml: r.blogHtml || '',
+        blogText: r.blogText || '',
+        tags: r.tags || [],
+        threads: r.threads || '',
+        shorts: r.shorts || [],
+        insta: r.insta || '',
+        ytTitle: r.ytTitle || '',
+        ytDesc: r.ytDesc || ''
+      },
+      photos: S.photos.map((p, i) => ({
+        name: String(i + 1).padStart(2, '0') + '_' + (p.name || '현장.jpg'),
+        takenAt: p.dateText || '',
+        dataUrl: p.ai || p.disp || ''
+      })),
+      channels: onChannels(rid),
+      channelStates: states,
+      publish: {
+        naver: { mode: 'safe_write', blogId: (r.brand === 'blogger' ? 'lvyhs621' : (b.blog || 'lvyhs621')) },
+        blogger: { draft: $('#bgDraft') ? $('#bgDraft').checked : true, blogId: bloggerCfg().blog || '' },
+        youtube: { format: 'shorts', seconds: 15 },
+        instagram: { locationTag: false },
+        threads: { maxChars: 350 }
+      },
+      guardrails: GUARDRAILS
+    };
+  }
+
+  function packForClipboard(p) {
+    const c = JSON.parse(JSON.stringify(p));
+    c.photos = (p.photos || []).map((x, i) => ({ name: x.name, takenAt: x.takenAt, index: i + 1 }));
+    c.note = '사진 원본은 앱의 [사진 + 원고 ZIP] 또는 로컬 PC 브릿지 전송으로 넘깁니다.';
+    return c;
+  }
+
+  function packMarkdown(p) {
+    const L = [];
+    const push = (s) => L.push(s);
+    push(p.header);
+    push('');
+    push('- 요청 ID: ' + p.requestId);
+    push('- 만든 시각: ' + fmtFull(p.requestedAt));
+    push('- 브랜드: ' + p.brand.name + ' (' + p.brand.blog + ')');
+    push('- 모드: ' + p.modeLabel + (p.topic ? ' · 주제: ' + p.topic : ''));
+    push('- 작업 종류: ' + (p.workType || '-'));
+    push('- 제목: ' + p.title);
+    push('- 선택 채널: ' + (p.channels.length ? p.channels.map(chLabel).join(', ') : '(없음)'));
+    push('- 사진: ' + p.photos.length + '장' + (p.photos.length ? ' (' + p.photos.map((x) => x.name).join(', ') + ')' : ''));
+    push('- 발행 방식: 네이버=서식 HTML 붙여넣기 / Blogger=' + (p.publish.blogger.draft ? '임시저장' : '바로 공개') + ' / 유튜브=쇼츠 대본·제목·설명 / 인스타=캡션(위치 태그 없음) / 스레드=글');
+    push('');
+    push('## 제목 후보');
+    (p.titles || []).forEach((t, i) => push((i + 1) + '. ' + t));
+    push('');
+    push('## 블로그 본문 (서식 HTML)');
+    push('```html');
+    push(p.article.blogHtml);
+    push('```');
+    push('');
+    push('## 블로그 본문 (일반 텍스트)');
+    push(p.article.blogText);
+    push('');
+    push('## 해시태그 (' + (p.article.tags || []).length + '개)');
+    push((p.article.tags || []).join(' '));
+    push('');
+    push('## 스레드');
+    push(p.article.threads);
+    push('');
+    push('## 15초 쇼츠 대본');
+    (p.article.shorts || []).forEach((s) => push((s.time || '') + ' | ' + (s.screen || '') + ' | ' + (s.voice || '')));
+    push('');
+    push('## 인스타그램 캡션');
+    push(p.article.insta);
+    push('');
+    push('## 유튜브');
+    push('제목: ' + (p.article.ytTitle || ''));
+    push('설명: ' + (p.article.ytDesc || ''));
+    push('');
+    push('## 사진');
+    if (!p.photos.length) push('(사진 없음)');
+    p.photos.forEach((x) => push('- ' + x.name + (x.takenAt ? ' · 촬영 ' + x.takenAt : '')));
+    push('');
+    push('## 지킬 것');
+    p.guardrails.forEach((g) => push('- ' + g));
+    push('');
+    push('## 기계용 JSON');
+    push('```json');
+    push(JSON.stringify(packForClipboard(p), null, 1));
+    push('```');
+    return L.join('\n');
+  }
+
+  async function copyPack() {
+    const r = S.result;
+    if (!r) return;
+    const p = buildPack(r);
+    const ok = await copyText(packMarkdown(p));
+    if (ok) {
+      const rid = pubId(r);
+      onChannels(rid).forEach((id) => { if (chState(rid, id).status === '대기') setPub(rid, id, { status: '발행요청' }); });
+      renderChannels();
+      paintP2();
+      paintPublishLog();
+    }
+    toast(ok ? '발행팩을 복사했습니다 · 채팅에 붙여넣으면 니케가 4채널 발행을 실행합니다' : '복사에 실패했습니다 · .json 내려받기를 써 주세요', !ok);
+  }
+
+  function downloadPack() {
+    const r = S.result;
+    if (!r) return;
+    const p = buildPack(r);
+    const d = new Date();
+    const pd = (n) => String(n).padStart(2, '0');
+    const name = '잉크원_st_AI_발행팩_' + d.getFullYear() + pd(d.getMonth() + 1) + pd(d.getDate()) + '_' + pd(d.getHours()) + pd(d.getMinutes()) + '.json';
+    downloadBlob(new Blob([JSON.stringify(p, null, 1)], { type: 'application/json' }), name);
+    toast('발행팩 JSON을 저장했습니다 · 사진 ' + p.photos.length + '장 포함');
+  }
+
+  function openTab(url) {
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  /* ── (B) 네이버 안전모드 ── */
+  async function naverSafe() {
+    const r = S.result;
+    if (!r) return;
+    const b = BRANDS[r.brand] || BRANDS.ink1;
+    const blogId = r.brand === 'blogger' ? 'lvyhs621' : (b.blog || 'lvyhs621');
+    const ok = await copyRich(r.blogHtml, r.blogText);
+    const url = 'https://blog.naver.com/PostWriteForm.naver?blogId=' + encodeURIComponent(blogId);
+    openTab(url);
+    const rid = pubId(r);
+    if (chState(rid, 'naver').status === '대기') setPub(rid, 'naver', { status: '발행요청' });
+    renderChannels();
+    paintP2();
+    paintPublishLog();
+    const out = $('#naverOut');
+    if (out) out.innerHTML = ok
+      ? '복사 완료 · `' + esc(blogId) + '` 글쓰기 창이 열렸습니다. 본문 칸에 붙여넣고 [발행]만 누르세요.'
+      : '복사가 막혔습니다. 원고 카드의 <b>서식 HTML 복사</b>를 먼저 눌러 주세요.';
+    toast(ok ? '서식 HTML 복사 완료 · 네이버 글쓰기 창에서 붙여넣고 [발행]만 누르세요' : '복사에 실패했습니다 · 서식 HTML 복사를 먼저 눌러 주세요', !ok);
+  }
+
+  /* ── (C) Blogger 공식 API ── */
+  function bloggerCfg() {
+    return {
+      blog: (store.get(LS.bgBlog) || '').trim(),
+      token: (store.get(LS.bgToken) || '').trim()
+    };
+  }
+
+  function blogErr(status, raw) {
+    let msg = String(raw || '');
+    try {
+      const j = JSON.parse(raw);
+      if (j && j.error && j.error.message) msg = j.error.message;
+    } catch (e) {}
+    if (status === 401) return new Error('토큰이 만료됐거나 잘못됐습니다(401). blogger 권한으로 새 토큰을 받아 주세요.');
+    if (status === 403) return new Error('권한이 없습니다(403). 토큰 scope에 https://www.googleapis.com/auth/blogger 가 있는지 확인해 주세요.');
+    if (status === 404) return new Error('블로그를 찾지 못했습니다(404). Blog ID를 확인해 주세요.');
+    return new Error('Blogger API 오류(' + status + '): ' + msg.slice(0, 150));
+  }
+
+  function netErr(e) {
+    if (e && e.name === 'TypeError') {
+      return new Error('브라우저에서 Blogger API 직접 호출이 막혔습니다(CORS·네트워크). 발행팩이나 로컬 PC 브릿지를 써 주세요.');
+    }
+    return e;
+  }
+
+  async function bloggerResolve(c) {
+    const v = c.blog;
+    if (!/^(https?:\/\/|.*blogspot\.)/i.test(v)) return v;
+    const url = /^https?:/i.test(v) ? v : 'https://' + v;
+    const res = await fetch(BLOGGER_API + 'blogs/byurl?url=' + encodeURIComponent(url), {
+      headers: { Authorization: 'Bearer ' + c.token }
+    });
+    const raw = await res.text();
+    let j = {};
+    try { j = JSON.parse(raw); } catch (e) {}
+    if (!res.ok) throw blogErr(res.status, raw);
+    if (!j.id) throw new Error('블로그 ID를 찾지 못했습니다. 숫자 ID를 직접 넣어 주세요.');
+    store.set(LS.bgBlog, j.id);
+    toast('Blog ID를 찾았습니다: ' + j.id);
+    return j.id;
+  }
+
+  async function bloggerTest() {
+    const c = bloggerCfg();
+    const out = $('#bgTestOut');
+    if (!c.token) { toast('Access Token을 먼저 저장해 주세요.', true); return; }
+    if (!c.blog) { toast('Blog ID 또는 주소를 먼저 넣어 주세요.', true); return; }
+    if (out) out.textContent = '확인 중…';
+    try {
+      const id = await bloggerResolve(c);
+      const res = await fetch(BLOGGER_API + 'blogs/' + encodeURIComponent(id) + '?fields=id,name,url,posts/totalItems', {
+        headers: { Authorization: 'Bearer ' + c.token }
+      });
+      const raw = await res.text();
+      let j = {};
+      try { j = JSON.parse(raw); } catch (e) {}
+      if (!res.ok) throw blogErr(res.status, raw);
+      const line = '연결됨 · ' + (j.name || id) + ' · ' + (j.url || '') + ' · 글 ' + ((j.posts && j.posts.totalItems) || 0) + '개';
+      if (out) out.textContent = line;
+      toast('Blogger 연결됨 · ' + (j.name || id));
+      return id;
+    } catch (e) {
+      const m = netErr(e);
+      if (out) out.textContent = m.message;
+      toast(m.message, true);
+    }
+  }
+
+  async function bloggerSend() {
+    const r = S.result;
+    if (!r) return;
+    const c = bloggerCfg();
+    const out = $('#bgOut');
+    if (!c.token || !c.blog) {
+      const ok = await copyRich(r.blogHtml, r.blogText);
+      if (out) out.innerHTML = '토큰·블로그 ID가 없어 <b>서식 HTML을 복사</b>했습니다. 설정(⚙)에서 연결하면 바로 올릴 수 있습니다.';
+      toast(ok ? '설정 전이라 본문 HTML만 복사했습니다' : '설정을 먼저 마쳐 주세요', true);
+      return;
+    }
+    const draft = $('#bgDraft') ? $('#bgDraft').checked : true;
+    const title = r.titles[S.selTitle] || r.titles[0] || '';
+    const body = {
+      kind: 'blogger#post',
+      title: title,
+      content: r.blogHtml,
+      labels: (r.tags || []).map((t) => String(t).replace(/^#/, '')).filter(Boolean),
+      status: draft ? 'draft' : 'live'
+    };
+    if (out) out.textContent = (draft ? '임시저장' : '발행') + ' 요청 중…';
+    $('#bgSend').disabled = true;
+    try {
+      const id = await bloggerResolve(c);
+      const res = await fetch(BLOGGER_API + 'blogs/' + encodeURIComponent(id) + '/posts/?isDraft=' + (draft ? 'true' : 'false'), {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + c.token, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const raw = await res.text();
+      let j = {};
+      try { j = JSON.parse(raw); } catch (e) {}
+      if (!res.ok) throw blogErr(res.status, raw);
+      const rid = pubId(r);
+      setPub(rid, 'blogger', { status: draft ? '임시저장' : '발행완료', url: j.url || '' });
+      renderChannels();
+      paintP2();
+      paintPublishLog();
+      if (out) out.innerHTML = '완료 · ' + (draft ? '임시저장' : '발행') + ' · ' + (j.url ? '<b>' + esc(j.url) + '</b>' : 'id ' + esc(j.id || ''));
+      toast(draft ? '구글 블로그에 임시저장했습니다' : '구글 블로그에 발행했습니다');
+    } catch (e) {
+      const m = netErr(e);
+      if (out) out.textContent = m.message;
+      toast(m.message, true);
+    } finally {
+      $('#bgSend').disabled = false;
+    }
+  }
+
+  /* ── (D) 로컬 PC 브릿지 ── */
+  function bridgeUrl() { return (store.get(LS.bridge) || '').trim(); }
+
+  function healthUrl(u) {
+    try {
+      const x = new URL(u);
+      if (/\/publish\/?$/.test(x.pathname)) x.pathname = x.pathname.replace(/\/publish\/?$/, '/health');
+      else if (x.pathname === '' || x.pathname === '/') x.pathname = '/health';
+      else x.pathname = x.pathname.replace(/\/?$/, '/health');
+      return x.toString();
+    } catch (e) { return u; }
+  }
+
+  async function bridgeTest() {
+    const u = bridgeUrl();
+    const out = $('#brTestOut');
+    if (!u) { toast('브릿지 URL을 먼저 저장해 주세요.', true); return; }
+    if (out) out.textContent = '확인 중…';
+    try {
+      const res = await fetch(healthUrl(u), { method: 'GET', cache: 'no-store' });
+      const raw = await res.text();
+      let j = {};
+      try { j = JSON.parse(raw); } catch (e) {}
+      if (!res.ok) throw new Error('브릿지 응답 오류(' + res.status + ')');
+      const line = '연결됨 · ' + (j.service || 'bridge') + ' v' + (j.version || '?') + (j.blogger ? ' · Blogger 준비됨' : ' · Blogger 미설정');
+      if (out) out.textContent = line;
+      toast('로컬 브릿지 연결됨');
+    } catch (e) {
+      const msg = '브릿지에 연결하지 못했습니다. PC에서 field_studio_bridge_sample.py 가 켜져 있는지, 주소·포트(8787)가 맞는지 확인해 주세요.';
+      if (out) out.textContent = msg;
+      toast(msg, true);
+    }
+  }
+
+  async function bridgeSend() {
+    const r = S.result;
+    if (!r) return;
+    const u = bridgeUrl();
+    const out = $('#bridgeOut');
+    if (!u) { toast('설정(⚙)에서 브릿지 URL을 넣어 주세요.', true); return; }
+    const p = buildPack(r);
+    if (out) out.textContent = '전송 중… (사진 ' + p.photos.length + '장 포함)';
+    $('#bridgeSend').disabled = true;
+    try {
+      const res = await fetch(u, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(p)
+      });
+      const raw = await res.text();
+      let j = {};
+      try { j = JSON.parse(raw); } catch (e) {}
+      if (!res.ok) throw new Error('브릿지 응답 오류(' + res.status + '): ' + String(raw).slice(0, 120));
+      const rid = pubId(r);
+      onChannels(rid).forEach((id) => {
+        const st = chState(rid, id);
+        if (st.status === '대기') setPub(rid, id, { status: '발행요청' });
+      });
+      renderChannels();
+      paintP2();
+      paintPublishLog();
+      const saved = j.savedPath || j.saved || '';
+      if (out) out.innerHTML = '전송 완료 · ' + (saved ? '<b>' + esc(saved) + '</b>' : 'PC가 받았습니다') + (j.blogger && j.blogger.url ? '<br>' + esc(j.blogger.url) : '');
+      toast('로컬 PC 브릿지로 보냈습니다');
+    } catch (e) {
+      const msg = e && e.name === 'TypeError'
+        ? '브릿지에 닿지 않았습니다. PC와 같은 와이파이인지, 주소가 127.0.0.1이 아니라 PC의 LAN IP인지 확인해 주세요.'
+        : (e && e.message) || '전송에 실패했습니다.';
+      if (out) out.textContent = msg;
+      toast(msg, true);
+    } finally {
+      $('#bridgeSend').disabled = false;
+    }
+  }
+
   /* ───────────────────────── 홈 ───────────────────────── */
   function dayKey(d) { return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+
+  function pubBadge(h) {
+    const e = h && h.id ? S.pub[h.id] : null;
+    if (!e || !e.ch) return '';
+    let done = 0, mov = 0;
+    CHANNELS.forEach((c) => {
+      const st = e.ch[c.id];
+      if (!st) return;
+      if (st.status === '발행완료') done++;
+      if (st.status !== '대기') mov++;
+    });
+    if (!mov) return '';
+    return ' · 발행 ' + done + '/' + mov;
+  }
 
   function paintHome() {
     const today = dayKey(new Date());
@@ -1264,7 +1865,7 @@
           : '<div class="noimg">' + (h.mode && h.mode !== 'field' ? '📝' : '📷') + '</div>') +
         '<div class="t"><b>' + esc(h.titles[0] || '(제목 없음)') + '</b>' +
         '<span>' + stamp + ' · ' + esc(BRANDS[h.brand] ? BRANDS[h.brand].name : h.brand) + ' · ' +
-        esc(h.mode === 'topic' ? '정보성·지정' : h.mode === 'random' ? '정보성·랜덤' : h.type) + '</span></div>' +
+        esc(h.mode === 'topic' ? '정보성·지정' : h.mode === 'random' ? '정보성·랜덤' : h.type) + esc(pubBadge(h)) + '</span></div>' +
         '<span class="badge">열기</span>';
       d.addEventListener('click', () => {
         S.result = h;
@@ -1291,6 +1892,19 @@
       Object.keys(localStorage).forEach((kk) => { bytes += (localStorage.getItem(kk) || '').length; });
     } catch (e) {}
     $('#lsUse').textContent = (bytes / 1024).toFixed(0) + 'KB / 약 5MB';
+
+    // P2: Blogger·브릿지 설정
+    $('#bgBlog').value = (store.get(LS.bgBlog) || '').trim();
+    $('#bgToken').value = (store.get(LS.bgToken) || '').trim();
+    const bc = bloggerCfg();
+    const bgb = $('#bgBadge');
+    bgb.textContent = bc.token && bc.blog ? '연결 설정됨' : (bc.token || bc.blog ? '일부 설정' : '미설정');
+    bgb.className = 'badge' + (bc.token && bc.blog ? '' : ' off');
+    $('#brUrl').value = bridgeUrl();
+    const brb = $('#brBadge');
+    brb.textContent = bridgeUrl() ? '설정됨' : '미설정';
+    brb.className = 'badge' + (bridgeUrl() ? '' : ' off');
+    paintPublishLog();
   }
 
   async function testKey() {
@@ -1449,17 +2063,49 @@
       downloadBlob(new Blob([html], { type: 'text/html;charset=utf-8' }), zipName(r) + '_원고.html');
       toast('원고 HTML을 저장했습니다');
     });
-    $('#naverBtn').addEventListener('click', async () => {
-      const r = S.result;
-      if (!r) return;
-      await copyRich(r.blogHtml, r.blogText);
-      window.open('https://blog.naver.com/lvyhs621', '_blank');
-      toast('본문을 복사했습니다 · 글쓰기에서 붙여넣으세요');
-    });
+    $('#naverSafeBtn').addEventListener('click', naverSafe);
+    $('#bgSend').addEventListener('click', bloggerSend);
+    $('#bgDraft').addEventListener('change', () => paintP2());
+    $('#packCopy').addEventListener('click', copyPack);
+    $('#packJson').addEventListener('click', downloadPack);
+    $('#bridgeSend').addEventListener('click', bridgeSend);
+    $('#goHist').addEventListener('click', () => go('home'));
     $('#discardBtn').addEventListener('click', () => {
       S.result = null;
       renderResult();
       go('write');
+    });
+
+    $('#bgSave').addEventListener('click', () => {
+      const b = $('#bgBlog').value.trim();
+      const t = $('#bgToken').value.trim();
+      if (b) store.set(LS.bgBlog, b); else store.del(LS.bgBlog);
+      if (t) store.set(LS.bgToken, t); else store.del(LS.bgToken);
+      paintSettings();
+      paintP2();
+      toast(t ? 'Blogger 설정을 저장했습니다' : 'Blogger 토큰을 지웠습니다');
+    });
+    $('#bgTest').addEventListener('click', bloggerTest);
+    $('#brSave').addEventListener('click', () => {
+      const u = $('#brUrl').value.trim();
+      if (u) store.set(LS.bridge, u); else store.del(LS.bridge);
+      paintSettings();
+      paintP2();
+      toast(u ? '브릿지 URL을 저장했습니다' : '브릿지 URL을 지웠습니다');
+    });
+    $('#brTest').addEventListener('click', bridgeTest);
+    $('#pubLogExport').addEventListener('click', () => {
+      const data = { app: 'ink1-field-studio', kind: 'publish-log', at: new Date().toISOString(), publish: S.pub };
+      downloadBlob(new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' }), '잉크원_st_AI_발행로그.json');
+      toast('발행 로그를 JSON으로 저장했습니다');
+    });
+    $('#pubLogClear').addEventListener('click', () => {
+      if (!confirm('발행 로그와 채널 상태를 모두 지울까요? (원고 기록은 남습니다)')) return;
+      S.pub = {};
+      store.del(LS.pub);
+      paintPublishLog();
+      if (S.result) { renderChannels(); paintP2(); }
+      toast('발행 로그를 지웠습니다');
     });
 
     $('#saveKey').addEventListener('click', () => {
@@ -1488,7 +2134,7 @@
     });
     $('#exportBtn').addEventListener('click', () => {
       const data = { app: 'ink1-field-studio', at: new Date().toISOString(), history: S.history };
-      downloadBlob(new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' }), '필드스튜디오_백업.json');
+      downloadBlob(new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' }), '잉크원_st_AI_백업.json');
       toast('기록을 JSON으로 저장했습니다');
     });
     $('#clearHistBtn').addEventListener('click', () => {
@@ -1524,6 +2170,7 @@
   function init() {
     loadCfg();
     loadHistory();
+    loadPublish();
     bindCanvas();
     bind();
     paintBrand();
