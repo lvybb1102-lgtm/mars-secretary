@@ -790,7 +790,7 @@ kbd {
   .stage { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(300px, 46dvh) auto; }
   .hud-card { border-radius: 18px; }
   /* 모바일: 자막은 고정 높이(내부 스크롤), 계획표는 내용만큼 펼쳐 페이지 스크롤 */
-  .side { grid-template-rows: minmax(220px, 40dvh) auto; }
+  .side { grid-template-rows: minmax(240px, 44dvh) auto; }
   .plan-list { overflow: visible; }
   .plan-panel { max-height: none; }
   .core-title { bottom: 6%; }
@@ -815,7 +815,7 @@ kbd {
   .topbar { padding: 10px 12px 6px; }
   .grid2 { grid-template-columns: 1fr; }
   .modal { padding: 10px; }
-  .sub-speak { font-size: 14.5px; }
+  .sub-speak { font-size: 14px; line-height: 1.62; }
   .send-btn span { display: none; }
 }
 
