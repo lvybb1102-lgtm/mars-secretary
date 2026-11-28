@@ -525,7 +525,7 @@
       const found = list.find((v) => v.name === cfg.voice || v.voiceURI === cfg.voice);
       if (found) return found;
     }
-    const prefer = list.find((v) => /female|여성|Yuna|Sora|Google/i.test(v.name)) || list[0];
+    const prefer = list.find((v) => /male|남성|InJoon|Hyunsu|BongJin|GookMin|Injun|Chul/i.test(v.name)) || list[0];
     return prefer;
   }
 
@@ -600,8 +600,8 @@
       const u = new SpeechSynthesisUtterance(chunks[i++]);
       u.lang = 'ko-KR';
       if (tts.voice) u.voice = tts.voice;
-      u.rate = Number(cfg.rate) || 1;
-      u.pitch = 0.98;
+      u.rate = Math.max(0.7, (Number(cfg.rate) || 1) * 0.94);
+      u.pitch = 0.76;
       u.onstart = () => { if (mySeq === tts.seq && state !== 'thinking') setState('speaking'); };
       u.onend = () => { if (mySeq === tts.seq) next(); };
       u.onerror = (e) => {
