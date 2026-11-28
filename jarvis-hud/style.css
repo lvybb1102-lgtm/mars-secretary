@@ -367,6 +367,8 @@ body[data-state="listening"] .core-wave i { background: linear-gradient(to top, 
   padding: 14px 16px 8px;
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 229, 255, 0.3) transparent;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 9px, #000 100%);
+          mask-image: linear-gradient(to bottom, transparent 0, #000 9px, #000 100%);
 }
 .subtitle-body::-webkit-scrollbar { width: 6px; }
 .subtitle-body::-webkit-scrollbar-thumb { background: rgba(0, 229, 255, 0.25); border-radius: 3px; }
