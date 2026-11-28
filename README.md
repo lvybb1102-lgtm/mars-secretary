@@ -7,6 +7,14 @@
 - 모든 대화·작업·메모·**지침**은 **각 기기 브라우저의 localStorage**에만 저장됩니다. 서버로 전송되지 않습니다.
 - AI 응답을 쓰려면 앱 → 설정(⚙️)에서 본인의 Google AI Studio 키(또는 OpenAI 키)를 넣습니다. 키는 그 기기 브라우저에만 저장되며 이 저장소에는 들어 있지 않습니다.
 
+## 🚀 자비스 HUD (`/jarvis-hud/`)
+
+- 주소: https://lvybb1102-lgtm.github.io/mars-secretary/jarvis-hud/
+- 원형 HUD 코어(Canvas) · 한국어 음성 대화(Web Speech) · Gemini `3.6-flash`(자동 대체) · BUILD PLAN 단계별 계획 패널.
+- 빠른 실행 4종(업무 브리핑·잉크원 홍보·A/S 초안·사업 아이디어)은 키 없이도 맛보기 응답으로 동작합니다.
+- 키는 `jarvis-hud`에서 독립 저장(`marshud_gemini_key_v1`)되며, 기존 `field-studio`·비서실 키가 있으면 설정에서 가져올 수 있습니다. 코드·저장소에 키 없음.
+- 단독 파일: `downloads/마르스_자비스_HUD.html` (파일 하나로 실행). 상세는 `jarvis-hud/README.md`.
+
 ## 지침(공통 규칙) 기능
 
 - 설정(⚙️) 맨 위 **「📜 비서실 공통 지침」**에서 지침을 직접 입력하거나 `.md`·`.txt` 파일로 불러옵니다.
