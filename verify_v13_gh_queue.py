@@ -397,6 +397,7 @@ def main():
 
         # ── 9. 토큰 없음 → 안내(업로드 시도 0)
         pg.evaluate("localStorage.removeItem('ink1fs_gh_token_v1')")
+        pg.evaluate("localStorage.removeItem('ink1fs_publish_v1')")   # 발행 기록 초기화 → 중복 확인창 없이 검사
         pg.reload(wait_until='load')
         pg.wait_for_timeout(1000)
         GH['calls'].clear()
@@ -412,6 +413,20 @@ def main():
         ok(len(puts()) == 0, '토큰 없으면 업로드 시도 0회')
         ok('미설정' in pg.inner_text('#ghState'), '상태 줄도 미설정 안내로 바뀜: ' + pg.inner_text('#ghState'))
         pg.evaluate("localStorage.setItem('ink1fs_gh_token_v1','github_pat_TESTTOKEN123')")
+
+        # ── 9b. 사진 없는 원고(기록에서 열림) → 확인창 한 번 거친다
+        pg.once('dialog', lambda d: d.dismiss())
+        GH['calls'].clear()
+        pg.click('#ghSend')
+        pg.wait_for_timeout(500)
+        ok(len(puts()) == 0, '사진 없는 원고 — 확인창에서 취소하면 업로드 0회')
+        pg.once('dialog', lambda d: d.accept())
+        pg.click('#ghSend')
+        pg.wait_for_timeout(2600)
+        ps5 = puts()
+        ok(len(ps5) == 2 and put_path(ps5[0]).endswith('pack.json') and put_path(ps5[1]).endswith('ready.json'),
+           '사진 0장이면 pack.json → ready.json 2회만 업로드: %s' % [put_path(c).split('/')[-1] for c in ps5])
+        ok(ps5 and put_json(ps5[1])['photo_count'] == 0, 'ready.json photo_count=0 (사진 없음)')
 
         # ── 10. 서비스워커 v5 · 오프라인 캐시
         sw = pg.evaluate("navigator.serviceWorker.ready.then(() => true).catch(() => false)")

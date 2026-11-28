@@ -2102,6 +2102,11 @@
     const b = BRANDS[r.brand] || BRANDS.ink1;
     const photos = S.photos.slice();
     const total = photos.length;
+    if (!total && r.mode === 'field' &&
+        !confirm('올릴 사진이 없습니다.\n기록에서 열면 사진은 그때 쓰던 기기에만 남습니다.\n사진 없이 원고만 보낼까요?')) {
+      if (btn) btn.disabled = false;
+      return;
+    }
     try {
       ghProg('저장소 확인 중…', 2);
       const rid = await uniqueRid(c);
