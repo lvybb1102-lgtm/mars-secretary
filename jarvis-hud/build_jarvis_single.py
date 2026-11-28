@@ -18,8 +18,8 @@ if "</script" in js:
 style_tag = '<style>\n/* style.css 인라인 */\n' + css + '\n</style>'
 script_tag = '<script>\n/* app.js 인라인 */\n' + js + '\n</script>'
 
-html = html.replace('<link rel="stylesheet" href="style.css" />', style_tag)
-html = html.replace('<script src="app.js"></script>', script_tag)
+html = re.sub(r'<link rel="stylesheet" href="style\.css(?:\?[^"]*)?"\s*/?>', lambda _: style_tag, html)
+html = re.sub(r'<script src="app\.js(?:\?[^"]*)?"></script>', lambda _: script_tag, html)
 
 banner = "<!-- 마르스 자비스 HUD — 단독 실행 파일 (style.css · app.js 인라인) -->\n"
 html = banner + html
