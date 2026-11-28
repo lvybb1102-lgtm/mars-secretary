@@ -538,10 +538,22 @@
       .trim();
   }
 
+  let ttsUnlocked = false;
+  function unlockTTS() {
+    if (ttsUnlocked || !window.speechSynthesis) return;
+    ttsUnlocked = true;
+    try {
+      const u = new SpeechSynthesisUtterance('');
+      u.volume = 0;
+      u.lang = 'ko-KR';
+      speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+
   function stopSpeak(silent) {
     tts.seq++;
     tts.speaking = false;
-    if (window.speechSynthesis) {
+    if (window.speechSynthesis && speechSynthesis.speaking) {
       try { speechSynthesis.cancel(); } catch (e) {}
     }
     if (!silent && state === 'speaking') setState('idle');
@@ -570,6 +582,7 @@
     if (cfg.tts === 'off' || !window.speechSynthesis) { if (onDone) onDone(); return; }
     const chunks = chunkText(text);
     if (!chunks.length) { if (onDone) onDone(); return; }
+    const wasSpeaking = tts.speaking || (window.speechSynthesis && speechSynthesis.speaking);
     stopSpeak(true);
     const mySeq = ++tts.seq;
     tts.speaking = true;
@@ -600,7 +613,8 @@
       };
       try { speechSynthesis.speak(u); } catch (e) { next(); }
     };
-    next();
+    if (wasSpeaking) setTimeout(next, 60);
+    else next();
   }
 
   /* ───────────────────────── 음성 인식 (STT) ───────────────────────── */
@@ -689,6 +703,7 @@
   }
 
   el.btnMic.addEventListener('click', () => {
+    unlockTTS();
     if (recOn || state === 'listening') stopListening(false);
     else startListening();
   });
@@ -1115,6 +1130,7 @@
 
   /* ───────────────────────── 전송 ───────────────────────── */
   async function submit(text) {
+    unlockTTS();
     const t = String(text || '').trim();
     if (!t) return;
     if (state === 'thinking') { toast('아직 답변을 만드는 중입니다.', 'warn'); return; }
