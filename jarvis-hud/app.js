@@ -1254,8 +1254,8 @@
 
   $('#btnSave').addEventListener('click', () => {
     const v = el.apiInput.value.trim();
-    if (v && !/^AIza[0-9A-Za-z_\-]{10,}$/.test(v) && !/^[A-Za-z0-9_\-]{20,}$/.test(v)) {
-      toast('키 형식이 이상합니다. AIza… 로 시작하는 키를 확인해 주세요.', 'warn');
+    if (v && !/^AIza[0-9A-Za-z_\-]{10,}$/.test(v) && !/^[A-Za-z0-9_.\-]{20,}$/.test(v)) {
+      toast('키 형식이 이상합니다. AIza… 또는 AQ.… 로 시작하는 키를 확인해 주세요.', 'warn');
       return;
     }
     if (v) store.set(LS.key, v); else store.del(LS.key);
