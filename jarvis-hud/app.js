@@ -539,7 +539,7 @@
   }
 
   let ttsUnlocked = false;
-  let activeAudio = null;
+  let activeAudio = new Audio();
   let activeAudioUrl = null;
   const SILENT_WAV = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
 
@@ -547,11 +547,15 @@
     if (ttsUnlocked) return;
     ttsUnlocked = true;
     try {
-      const a = new Audio(SILENT_WAV);
-      a.volume = 0;
-      const p = a.play();
-      if (p && p.catch) p.catch(() => {});
-    } catch (e) {}
+      activeAudio.src = SILENT_WAV;
+      activeAudio.volume = 0;
+      const p = activeAudio.play();
+      if (p && p.then) {
+        p.then(() => { activeAudio.pause(); activeAudio.volume = 1; }).catch(() => { activeAudio.volume = 1; });
+      } else {
+        activeAudio.volume = 1;
+      }
+    } catch (e) { activeAudio.volume = 1; }
     if (window.speechSynthesis) {
       try {
         const u = new SpeechSynthesisUtterance('');
@@ -598,7 +602,7 @@
         contents: [{ parts: [{ text: clean }] }],
         generationConfig: {
           responseModalities: ['AUDIO'],
-          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Charon' } } }
+          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Orus' } } }
         }
       })
     });
@@ -619,10 +623,7 @@
   function stopSpeak(silent) {
     tts.seq++;
     tts.speaking = false;
-    if (activeAudio) {
-      try { activeAudio.pause(); activeAudio.src = ''; } catch (e) {}
-      activeAudio = null;
-    }
+    try { activeAudio.pause(); activeAudio.removeAttribute('src'); activeAudio.load(); } catch (e) {}
     if (activeAudioUrl) {
       try { URL.revokeObjectURL(activeAudioUrl); } catch (e) {}
       activeAudioUrl = null;
@@ -668,22 +669,22 @@
         if (mySeq !== tts.seq) { if (wavUrl) URL.revokeObjectURL(wavUrl); return; }
         if (wavUrl) {
           activeAudioUrl = wavUrl;
-          const a = new Audio(wavUrl);
-          activeAudio = a;
-          a.playbackRate = Math.max(0.7, Math.min(1.4, Number(cfg.rate) || 1));
-          a.onended = () => {
+          activeAudio.volume = 1;
+          activeAudio.src = wavUrl;
+          activeAudio.playbackRate = Math.max(0.7, Math.min(1.4, Number(cfg.rate) || 1));
+          activeAudio.onended = () => {
             if (mySeq !== tts.seq) return;
             tts.speaking = false;
             if (state === 'speaking') setState('idle');
             if (onDone) onDone();
           };
-          a.onerror = () => {
+          activeAudio.onerror = () => {
             if (mySeq !== tts.seq) return;
             tts.speaking = false;
             if (state === 'speaking') setState('idle');
             if (onDone) onDone();
           };
-          await a.play();
+          await activeAudio.play();
           return;
         }
       } catch (e) {}
