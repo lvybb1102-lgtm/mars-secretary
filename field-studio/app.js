@@ -928,7 +928,9 @@
       at: new Date().toISOString(),
       brand: S.brand,
       mode: S.mode,
-      topic: String(sec.TOPIC || (S.mode === 'topic' ? S.topic : S.pick) || '').replace(/^["'“”]|["'“”]$/g, '').trim(),
+      topic: String(sec.TOPIC || (S.mode === 'topic' ? S.topic : S.pick) || '')
+        .replace(/\s*\/\s*아싸렌탈수원지사\s*$/, '')   // 주제에 제목 꼬리표가 붙어 오면 뗀다
+        .replace(/^["'“”]|["'“”]$/g, '').trim(),
       type: S.mode === 'field' ? S.type : '정보글',
       memo: S.memo.trim(),
       titles: titles.length ? titles : ['(제목 없음)'],
